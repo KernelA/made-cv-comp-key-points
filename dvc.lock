@@ -1,0 +1,14 @@
+unzip:
+  cmd: python ./unzip.py -c ./configs/prepare/unzip.yml
+  deps:
+  - path: ./configs/prepare/unzip.yml
+    md5: ff03768450dac832b7dc882386ed2090
+    size: 95
+  - path: ./unzip.py
+    md5: 5472a771b09ca2d43f3c4a7765385d41
+    size: 678
+  outs:
+  - path: ./data/test-train/contest01_data
+    md5: caec7946fd41a447a13aaf84f6486866.dir
+    size: 2512026582
+    nfiles: 80003

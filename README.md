@@ -1,12 +1,3 @@
-# comp1-key-points
+```python train.py --name "baseline" --data "PATH_TO_DATA" [--gpu]```
 
-## Description
-
-
-## Requirements
-
-1. Python 3.8 or higher.
-
-## How to run
-
-
+https://www.kaggle.com/c/made-cv-2021-contest-01-facial-landmarks

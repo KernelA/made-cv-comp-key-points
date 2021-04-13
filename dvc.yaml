@@ -1,0 +1,8 @@
+stages:
+  unzip:
+    cmd: python ./unzip.py -c ./configs/prepare/unzip.yml
+    deps:
+    - ./configs/prepare/unzip.yml
+    - ./unzip.py
+    outs:
+    - ./data/test-train/contest01_data
