@@ -17,33 +17,18 @@ class LandMarkDatset(data.Dataset):
         self._path_to_dir = path_to_dir
         self._is_train = is_train
         self._transformations = transformations
-        self._image_dir = os.path.join(self._path_to_dir, "train" if self._is_train else "test")
+        split_type = "train" if self._is_train else "test"
+        self._image_dir = os.path.join(
+            self._path_to_dir, split_type, "images")
         csv_landmarks_date = os.path.join(
-            path_to_dir, "landmarks.csv") if is_train else "test_points.csv"
+            self._path_to_dir, split_type,
+            "landmarks.csv" if is_train else "test_points.csv")
+
         landmarks_data = pd.read_csv(
-            csv_landmarks_date, sep="\t", index="file_name", engine="c")
+            csv_landmarks_date, sep="\t", index_col="file_name", engine="c")
 
-        bad_files = self._check_bad_images()
-
-        if bad_files:
-            self._logger.info("Bad images: %d from %d", len(bad_files), landmarks_data.shape[0])
-            landmarks_data.drop(index=bad_files, inplace=True)
-
-        self._image_names = landmarks_data.index.to_list()
+        self._image_names = landmarks_data.index.tolist()
         self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy())
-
-    def _check_bad_images(self, landmarks_data) -> list:
-        self._logger.info("Check images for bad data")
-        bad_files = []
-
-        for image_name in landmarks_data.index:
-            try:
-                self._read_image(image_name)
-            except Exception:
-                self._logger.exception("Detected bad image")
-                bad_files.append(image_name)
-
-        return bad_files
 
     def _read_image(self, image_name: str):
         image_path = os.path.join(self._image_dir, image_name)
