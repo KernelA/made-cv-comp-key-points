@@ -28,7 +28,8 @@ class LandMarkDatset(data.Dataset):
             csv_landmarks_date, sep="\t", index_col="file_name", engine="c")
 
         self._image_names = landmarks_data.index.tolist()
-        self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy())
+        self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy()).reshape(
+            len(self._image_names), len(landmarks_data.columns) // 2, 2)
 
     def _read_image(self, image_name: str):
         image_path = os.path.join(self._image_dir, image_name)
