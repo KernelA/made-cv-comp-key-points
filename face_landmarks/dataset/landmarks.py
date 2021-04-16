@@ -6,7 +6,8 @@ from torch.utils import data
 from torchvision import io
 import pytorch_lightning as pl
 import pandas as pd
-from torchvision.io.image import ImageReadMode
+
+from .utils import read_image, normalize_landmarks
 
 
 class LandMarkDatset(data.Dataset):
@@ -31,19 +32,23 @@ class LandMarkDatset(data.Dataset):
         self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy()).reshape(
             len(self._image_names), len(landmarks_data.columns) // 2, 2)
 
-    def _read_image(self, image_name: str):
-        image_path = os.path.join(self._image_dir, image_name)
-        return io.read_image(image_path, ImageReadMode.RGB)
+    def index2img_name(self, index: int) -> str:
+        return self._image_names[index]
 
     def __len__(self):
         return len(self._image_names)
 
     def __getitem__(self, index):
-        image = self._read_image(self._image_names[index])
+        image = read_image(os.path.join(self._image_dir, self._image_names[index]))
+
+        height, width = image.shape[-2:]
+
         if self._transformations is not None:
             image = self._transformations(image)
 
-        return {"image": image, "landmarks": self._landmarks_points[index]}
+        return {"image": image,
+                "norm_landmarks": normalize_landmarks(self._landmarks_points[index], width, height),
+                "image_name": self._image_names[index]}
 
 
 # class LandmarkData(pl.LightningDataModule):
