@@ -2,23 +2,23 @@ stages:
   unzip:
     cmd: python ./unzip.py -c ./configs/prepare/unzip.yml
     deps:
-      - ./configs/prepare/unzip.yml
-      - ./unzip.py
-      - ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    - ./configs/prepare/unzip.yml
+    - ./unzip.py
+    - ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
     outs:
-      - ./data/test-train/contest01_data
+    - ./data/test-train/contest01_data
   extract_train_emb:
     cmd: python ./compute_embeddings.py -c ./configs/extract_features/ext_features.yml
     deps:
-      - ./compute_embeddings.py
-      - ./configs/extract_features/ext_features.yml
-      - ./data/test-train/contest01_data/train
-      - ./face_landmarks
+    - ./compute_embeddings.py
+    - ./configs/extract_features/ext_features.yml
+    - ./data/test-train/contest01_data/train
+    - ./face_landmarks
     outs:
-      - ./data/features/train_emb.pickle
+    - ./data/features/train_emb.pickle
   download_data:
-    cmd:
-      kaggle competitions download -c made-cv-2021-contest-01-facial-landmarks
+    cmd: kaggle competitions download -c made-cv-2021-contest-01-facial-landmarks
       -p ./data/raw-data/
     outs:
-      - ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    - ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip:
+        persist: true
