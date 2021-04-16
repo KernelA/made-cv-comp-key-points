@@ -1,5 +1,6 @@
 import os
 import logging
+from typing import Iterable, List, Union
 
 import torch
 from torch.utils import data
@@ -32,8 +33,11 @@ class LandMarkDatset(data.Dataset):
         self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy()).reshape(
             len(self._image_names), len(landmarks_data.columns) // 2, 2)
 
-    def index2img_name(self, index: int) -> str:
-        return self._image_names[index]
+    def index2img_name(self, index: Union[int, Iterable[int]]) -> Union[str, List[str]]:
+        if isinstance(index, int):
+            return self._image_names[index]
+        else:
+            return [self._image_names[i] for i in index]
 
     def __len__(self):
         return len(self._image_names)

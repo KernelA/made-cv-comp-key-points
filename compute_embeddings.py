@@ -14,7 +14,7 @@ from face_landmarks.costants import PICKLE_PROTOCOl, TORCHVISION_RGB_MEAN, TORCH
 
 
 def init_model(device):
-    dense_net = models.densenet121(pretrained=True)
+    dense_net = models.vgg11_bn(pretrained=True)
     feature_extarctor = dense_net.features
     feature_extarctor.eval()
     feature_extarctor.to(device)
