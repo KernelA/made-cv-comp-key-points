@@ -16,8 +16,8 @@ extract_train_emb:
   cmd: python ./compute_embeddings.py -c ./configs/extract_features/ext_features.yml
   deps:
   - path: ./compute_embeddings.py
-    md5: eba8875f7aab80c7127c3e1b76645635
-    size: 2616
+    md5: 857e678215456c93188ada9be223a469
+    size: 2612
   - path: ./configs/extract_features/ext_features.yml
     md5: e3a55327cccce292086c253b7d595495
     size: 87
@@ -31,5 +31,12 @@ extract_train_emb:
     nfiles: 16
   outs:
   - path: ./data/features/train_emb.pickle
-    md5: 89a5fd6ed099c413b593ab8335016c0e
-    size: 524450
+    md5: 5e14bb7ff2a970f44131e8ea71821ee5
+    size: 262144163
+download_data:
+  cmd: kaggle competitions download -c made-cv-2021-contest-01-facial-landmarks -p
+    ./data/raw-data/
+  outs:
+  - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    md5: f7d2134eb7b54aef3b56ae4cfc683ab7
+    size: 2186362366
