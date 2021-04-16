@@ -6,3 +6,12 @@ stages:
     - ./unzip.py
     outs:
     - ./data/test-train/contest01_data
+  extract_train_emb:
+    cmd: python ./compute_embeddings.py -c ./configs/extract_features/ext_features.yml
+    deps:
+    - ./compute_embeddings.py
+    - ./configs/extract_features/ext_features.yml
+    - ./data/test-train/contest01_data/train
+    - ./face_landmarks
+    outs:
+    - ./data/features/train_emb.pickle

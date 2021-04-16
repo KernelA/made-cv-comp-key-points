@@ -1,0 +1,2 @@
+data_dir: ./data/test-train/contest01_data
+emb_out: ./data/features/train_emb.pickle
