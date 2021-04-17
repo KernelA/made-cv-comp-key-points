@@ -30,7 +30,7 @@ stages:
       - ./face_landmarks/
       - ./main_train.py
       - ./model/
-      - .\data\test-train/contest01_data/train
+      - ./data/test-train/contest01_data/train
     params:
       - params.py:
           - LossParams
