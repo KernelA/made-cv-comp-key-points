@@ -1,3 +1,3 @@
-```python train.py --name "baseline" --data "PATH_TO_DATA" [--gpu]```
+# Решение соревнования на Kaggle
 
-https://www.kaggle.com/c/made-cv-2021-contest-01-facial-landmarks
+[Описание соревнования](https://www.kaggle.com/c/made-cv-2021-contest-01-facial-landmarks/overview)

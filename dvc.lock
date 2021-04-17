@@ -37,57 +37,107 @@ extract_train_emb:
     md5: 5e14bb7ff2a970f44131e8ea71821ee5
     size: 262144163
 download_data:
-  cmd: kaggle competitions download -c made-cv-2021-contest-01-facial-landmarks -p
-    ./data/raw-data/
+  cmd: gdown --id 19905pDRrnX5YMdw-mvDZadJdUuzh_w2e -O ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
   outs:
   - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
     md5: f7d2134eb7b54aef3b56ae4cfc683ab7
     size: 2186362366
 train:
-  cmd: python ./main_train.py -c ./configs/train/train.yml --fast_dev_run
+  cmd: python ./main_train.py -c ./configs/train/train.yml
   deps:
   - path: ./configs/train/train.yml
-    md5: fb41f155ec32ac05b8cd178e13826f88
-    size: 169
-  - path: ./face_landmarks/
-    md5: 3279ab5ab90a3fad6a20699a8dda7666.dir
-    size: 32536
-    nfiles: 22
-  - path: ./main_train.py
-    md5: 531c80c2ec3279a3dcfd878667d4f322
-    size: 6287
-  - path: ./model/
-    md5: 3bbbf2318c43a9ef64faa9dcd6d3731f.dir
-    size: 2547
-    nfiles: 4
-  - path: .\data\test-train/contest01_data/train
+    md5: 3438ffbccc2fac330dcd7e55a12fecaa
+    size: 174
+  - path: ./data/test-train/contest01_data/train
     md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
     size: 2090142348
     nfiles: 64001
+  - path: ./face_landmarks/
+    md5: cfbd74d08817447c56bcffae40d2caf3.dir
+    size: 33153
+    nfiles: 22
+  - path: ./main_train.py
+    md5: eac7d3f67a9ea436a782b6c08050f89f
+    size: 6344
+  - path: ./model/
+    md5: 3ebd9fc197e1182d53060fc88563f2fe.dir
+    size: 2348
+    nfiles: 4
   params:
     params.py:
       LossParams:
-        w: 0.1
+        w: 0.2
         eps: 2
         redcution: sum
       OptimizerParams:
-        lr: 0.001
+        lr: 0.0001
         betas:
         - 0.9
         - 0.999
         eps: 1e-08
         weight_decay: 0
-        amsgrad: false
+        amsgrad: true
       TrainParams:
         train_size: 0.8
         num_landmarks: 971
-        dropout_prob: 0.5
+        dropout_prob: 0.25
         check_val_every_n_epoch: 2
-        flush_logs_every_n_steps: 20
+        flush_logs_every_n_steps: 10
         precision: 16
-        max_epochs: 5
+        max_epochs: 50
+        train_backbone: true
   outs:
   - path: ./exp/train
+    md5: d751713988987e9331980363e24189ce.dir
+    size: 0
+    nfiles: 0
+test-run:
+  cmd: python ./main_train.py -c ./configs/train/train.yml --fast_dev_run --exp_dir
+    ./exp/test_run --valid_batch_size 16 --train_batch_size 16
+  deps:
+  - path: ./configs/train/train.yml
+    md5: 097d1c72da6187764475c39e9b857fd8
+    size: 177
+  - path: ./data/test-train/contest01_data/train
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
+  - path: ./face_landmarks/
+    md5: cfbd74d08817447c56bcffae40d2caf3.dir
+    size: 33153
+    nfiles: 22
+  - path: ./main_train.py
+    md5: 6c1209555c865350285e35ec89259bad
+    size: 6406
+  - path: ./model/
+    md5: 3ebd9fc197e1182d53060fc88563f2fe.dir
+    size: 2348
+    nfiles: 4
+  params:
+    params.py:
+      LossParams:
+        w: 0.2
+        eps: 2
+        redcution: sum
+      OptimizerParams:
+        lr: 0.0001
+        betas:
+        - 0.9
+        - 0.999
+        eps: 1e-08
+        weight_decay: 0
+        amsgrad: true
+      TrainParams:
+        train_size: 0.8
+        num_landmarks: 971
+        dropout_prob: 0.25
+        check_val_every_n_epoch: 2
+        flush_logs_every_n_steps: 10
+        precision: 16
+        max_epochs: 50
+        train_backbone: true
+  outs:
+  - path: ./exp/test_run
     md5: d751713988987e9331980363e24189ce.dir
     size: 0
     nfiles: 0
