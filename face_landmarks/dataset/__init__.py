@@ -1,3 +1,3 @@
-from .landmarks import LandMarkDatset
-from .utils import normalize_landmarks, denormalize_landmarks
+from .landmarks import LandMarkDatset, FullLandmarkDataModule, TrainTestLandmarkDataModule
+from .utils import normalize_landmarks, denormalize_landmarks, plot_landmarks
 from .transforms import SquarePaddingResize

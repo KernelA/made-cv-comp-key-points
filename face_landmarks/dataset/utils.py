@@ -1,6 +1,7 @@
 import torch
 from torchvision import io
 from torchvision.io.image import ImageReadMode
+from matplotlib import pyplot as plt
 
 
 def read_image(image_path: str, read_mode=ImageReadMode.RGB):
@@ -24,3 +25,12 @@ def denormalize_landmarks(norm_landmarks_positions, image_width: int, image_heig
     landmarks_positions[:, 1] *= image_height
 
     return torch.round(landmarks_positions)
+
+
+def plot_landmarks(image_tensor, landmark_positions, figsize=(10, 10), markersize: int = 2):
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(111)
+    ax.imshow(image_tensor)
+    ax.plot(landmark_positions[:, 0], landmark_positions[:, 1], "g+", markersize=markersize)
+
+    return fig
