@@ -1,18 +1,19 @@
 import torch
 from torch.nn import functional as F
 import pytorch_lightning as pl
-from typing import Optional, Callable
 
 from ..costants import TORCHVISION_RGB_MEAN, TORCHVISION_RGB_STD
 from ..dataset import plot_landmarks, denormalize_landmarks
 
 
 class ModelTrain(pl.LightningModule):
-    def __init__(self, model, loss_func, optimizer_params):
+    def __init__(self, model, loss_func, optimizer_params, target_metric_name: str, save_img_every_train_batch: int = 10):
         super().__init__()
         self._model = model
         self._loss_func = loss_func
         self._opt_params = optimizer_params
+        self._target_metric = target_metric_name
+        self._loss_name = "Loss"
 
     def forward(self, data: dict):
         return self._model(data)
@@ -50,7 +51,7 @@ class ModelTrain(pl.LightningModule):
 
                 self.logger.experiment.add_figure(tag, bad_pred_fig, global_step=self.global_step)
 
-        self.log("Loss", loss, on_step=True, on_epoch=True)
+        self.log(self._loss_name, loss, on_step=True, on_epoch=True)
         self.log("MSE loss", mse_loss_value, on_step=True, on_epoch=True)
 
         return loss
@@ -79,7 +80,7 @@ class ModelTrain(pl.LightningModule):
             self.logger.experiment.add_figure(tag, bad_pred_fig, global_step=self.global_step)
 
         mse_loss_value = torch.mean(mse_loss_values)
-        self.log("Val MSE loss", mse_loss_value, on_step=False, on_epoch=True)
+        self.log(self._target_metric, mse_loss_value, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
@@ -87,4 +88,4 @@ class ModelTrain(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, min_lr=1e-6, verbose=True, mode="min")
 
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "Loss"}
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": self._loss_name}

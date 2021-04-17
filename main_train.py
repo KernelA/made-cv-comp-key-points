@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 import pathlib
 
 import configargparse
@@ -18,18 +18,18 @@ from model import LandmarkPredictor
 from params import LossParams, TrainParams, RANDOM_STATE, OptimizerParams
 
 
-def train_transform():
+def train_transform(img_size: Tuple[int]):
     return transforms.Compose([
         transforms.ConvertImageDtype(torch.get_default_dtype()),
-        transforms.Resize((192, 256)),
+        transforms.Resize(img_size),
         transforms.Normalize(mean=TORCHVISION_RGB_MEAN, std=TORCHVISION_RGB_STD)
     ])
 
 
-def valid_transform():
+def valid_transform(img_size: Tuple[int]):
     return transforms.Compose([
         transforms.ConvertImageDtype(torch.get_default_dtype()),
-        transforms.Resize((192, 256)),
+        transforms.Resize(img_size),
         transforms.Normalize(mean=TORCHVISION_RGB_MEAN, std=TORCHVISION_RGB_STD)
     ])
 
@@ -54,7 +54,9 @@ def main(args):
 
     train_params = TrainParams()
 
-    train_tr, valid_tr = train_transform(), valid_transform()
+    img_size = (192, 256)
+
+    train_tr, valid_tr = train_transform(img_size), valid_transform(img_size)
 
     if train_params.train_size == 1:
         datamodule = FullLandmarkDataModule(path_to_dir=args.data_dir,
@@ -82,12 +84,14 @@ def main(args):
 
     opt_params = OptimizerParams()
 
-    train_module = ModelTrain(model, loss, opt_params)
+    target_metric_name = "Val MSE loss"
+
+    train_module = ModelTrain(model, loss, opt_params, target_metric_name)
 
     checkpoint_dir = exp_dir / "checkpoint"
     checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
-    checkpoint_callback = callbacks.ModelCheckpoint(monitor="Val MSE loss",
+    checkpoint_callback = callbacks.ModelCheckpoint(monitor=target_metric_name,
                                                     dirpath=checkpoint_dir,
                                                     filename="{epoch}-{Val MSE loss:.2f}",
                                                     verbose=True,

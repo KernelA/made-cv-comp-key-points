@@ -16,7 +16,7 @@ class TrainParams:
         self.num_landmarks = 971
         self.dropout_prob = 0.5
         self.check_val_every_n_epoch = 2
-        self.flush_logs_every_n_steps = 100
+        self.flush_logs_every_n_steps = 20
         # 16 or 32
         self.precision = 16
         self.max_epochs = 5
@@ -24,6 +24,6 @@ class TrainParams:
 
 class LossParams:
     def __init__(self) -> None:
-        self.w = 0.5
+        self.w = 0.1
         self.eps = 2
         self.redcution = "sum"
