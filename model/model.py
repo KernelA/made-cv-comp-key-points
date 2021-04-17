@@ -5,17 +5,16 @@ from torch.nn import functional as F
 
 class LandmarkPredictor(nn.Module):
 
-    def __init__(self, *, backbone, emb_dim: int, num_landmarks: int, dropout_prob: float = 0.5):
+    def __init__(self, *, backbone, emb_dim: int, num_landmarks: int, dropout_prob: float = 0.5, train_backbone: bool = True):
         super().__init__()
 
-        self.backbone = backbone
-
-        for param in self.backbone.parameters():
-            param.required_grad = True
+        self.regressor = backbone
+        self.regressor.requires_grad_(train_backbone)
 
         linear_output = 1024
 
-        self.regressor = nn.Sequential(
+        self.regressor.fc = nn.Sequential(
+            nn.Flatten(start_dim=1),
             nn.Linear(emb_dim, linear_output),
             nn.Dropout(dropout_prob),
             nn.Linear(linear_output, num_landmarks * 2)
@@ -27,6 +26,4 @@ class LandmarkPredictor(nn.Module):
         Each row is: x0, y0, x1, y1, x2, y2, ...
         """
         images = x["image"]
-        conv_res = self.backbone(images)
-        embeddings = F.adaptive_avg_pool2d(conv_res, 1).view(images.shape[0], -1)
-        return torch.relu(self.regressor(embeddings))
+        return self.regressor(images)

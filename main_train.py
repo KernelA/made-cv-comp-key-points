@@ -34,12 +34,11 @@ def valid_transform(img_size: Tuple[int]):
     ])
 
 
-def get_model(num_landmarks: int, dropout_prob: float):
-    pretrained_model = models.vgg13_bn(pretrained=True)
-    backbone = pretrained_model.features
+def get_model(num_landmarks: int, dropout_prob: float, train_backbone: bool):
+    backbone = models.resnet101(pretrained=True)
 
-    return LandmarkPredictor(backbone=backbone, emb_dim=512,
-                             num_landmarks=num_landmarks, dropout_prob=dropout_prob)
+    return LandmarkPredictor(backbone=backbone, emb_dim=2048,
+                             num_landmarks=num_landmarks, dropout_prob=dropout_prob, train_backbone=train_backbone)
 
 
 def get_loss(w: float, eps: float, reduction: Optional[str]):
@@ -76,7 +75,8 @@ def main(args):
                                                  train_size=train_params.train_size,
                                                  train_transforms=train_tr, val_transforms=valid_tr)
 
-    model = get_model(train_params.num_landmarks, train_params.dropout_prob)
+    model = get_model(train_params.num_landmarks, train_params.dropout_prob,
+                      train_params.train_backbone)
 
     loss_params = LossParams()
 
@@ -86,14 +86,15 @@ def main(args):
 
     target_metric_name = "Val MSE loss"
 
-    train_module = ModelTrain(model, loss, opt_params, target_metric_name)
+    train_module = ModelTrain(model, loss, opt_params, target_metric_name,
+                              save_img_every_train_batch=25)
 
     checkpoint_dir = exp_dir / "checkpoint"
     checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
     checkpoint_callback = callbacks.ModelCheckpoint(monitor=target_metric_name,
                                                     dirpath=checkpoint_dir,
-                                                    filename="{epoch}-{Val MSE loss:.2f}",
+                                                    filename="{epoch}-{Val MSE loss:.4f}",
                                                     verbose=True,
                                                     save_last=True,
                                                     save_top_k=2,

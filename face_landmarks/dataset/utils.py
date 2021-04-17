@@ -27,10 +27,14 @@ def denormalize_landmarks(norm_landmarks_positions, image_width: int, image_heig
     return torch.round(landmarks_positions)
 
 
-def plot_landmarks(image_tensor, landmark_positions, figsize=(10, 10), markersize: int = 2):
+def plot_landmarks(image_tensor, landmark_positions, true_landmarks=None, figsize=(10, 10), markersize: int = 2):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     ax.imshow(image_tensor)
+
+    if true_landmarks is not None:
+        ax.plot(true_landmarks[:, 0], true_landmarks[:, 1], "b+", markersize=markersize)
+
     ax.plot(landmark_positions[:, 0], landmark_positions[:, 1], "g+", markersize=markersize)
 
     return fig
