@@ -4,6 +4,9 @@ unzip:
   - path: ./configs/prepare/unzip.yml
     md5: ff03768450dac832b7dc882386ed2090
     size: 95
+  - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    md5: f7d2134eb7b54aef3b56ae4cfc683ab7
+    size: 2186362366
   - path: ./unzip.py
     md5: ea0334e3ff9614bfcf5f36fb9e9739cd
     size: 1807
@@ -40,3 +43,51 @@ download_data:
   - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
     md5: f7d2134eb7b54aef3b56ae4cfc683ab7
     size: 2186362366
+train:
+  cmd: python ./main_train.py -c ./configs/train/train.yml --fast_dev_run
+  deps:
+  - path: ./configs/train/train.yml
+    md5: fb41f155ec32ac05b8cd178e13826f88
+    size: 169
+  - path: ./face_landmarks/
+    md5: 3279ab5ab90a3fad6a20699a8dda7666.dir
+    size: 32536
+    nfiles: 22
+  - path: ./main_train.py
+    md5: 531c80c2ec3279a3dcfd878667d4f322
+    size: 6287
+  - path: ./model/
+    md5: 3bbbf2318c43a9ef64faa9dcd6d3731f.dir
+    size: 2547
+    nfiles: 4
+  - path: .\data\test-train/contest01_data/train
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
+  params:
+    params.py:
+      LossParams:
+        w: 0.1
+        eps: 2
+        redcution: sum
+      OptimizerParams:
+        lr: 0.001
+        betas:
+        - 0.9
+        - 0.999
+        eps: 1e-08
+        weight_decay: 0
+        amsgrad: false
+      TrainParams:
+        train_size: 0.8
+        num_landmarks: 971
+        dropout_prob: 0.5
+        check_val_every_n_epoch: 2
+        flush_logs_every_n_steps: 20
+        precision: 16
+        max_epochs: 5
+  outs:
+  - path: ./exp/train
+    md5: d751713988987e9331980363e24189ce.dir
+    size: 0
+    nfiles: 0
