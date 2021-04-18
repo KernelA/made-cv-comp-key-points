@@ -2,6 +2,7 @@ import os
 import logging
 from typing import Iterable, List, Union
 import logging
+import ast
 
 
 import torch
@@ -32,8 +33,13 @@ class LandMarkDatset(data.Dataset):
             csv_landmarks_date, sep="\t", index_col="file_name", engine="c")
 
         self._image_names = landmarks_data.index.tolist()
-        self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy()).reshape(
-            len(self._image_names), len(landmarks_data.columns) // 2, 2)
+
+        if self._is_train:
+            self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy()).reshape(
+                len(self._image_names), len(landmarks_data.columns) // 2, 2)
+        else:
+            self._point_indices = torch.LongTensor(
+                [ast.literal_eval(indices) for indices in landmarks_data["point_index_list"]])
 
     def index2img_name(self, index: Union[int, Iterable[int]]) -> Union[str, List[str]]:
         if isinstance(index, int):
@@ -52,9 +58,17 @@ class LandMarkDatset(data.Dataset):
         if self.transformations is not None:
             image = self.transformations(image)
 
-        return {"image": image,
-                "norm_landmarks": normalize_landmarks(self._landmarks_points[index], width, height),
-                "image_name": self._image_names[index]}
+        data = {"image": image, "image_name": self._image_names[index]}
+
+        if self._is_train:
+            data["norm_landmarks"] = normalize_landmarks(
+                self._landmarks_points[index], width, height)
+        else:
+            data["point_indices"] = self._point_indices[index]
+            data["img_height"] = height
+            data["img_width"] = width
+
+        return data
 
 
 class FullLandmarkDataModule(pl.LightningDataModule):

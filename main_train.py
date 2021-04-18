@@ -10,7 +10,6 @@ from torchvision import transforms
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 
-from face_landmarks.dataset.landmarks import FullLandmarkDataModule
 from cli_utils import is_dir
 from face_landmarks import ModelTrain, TrainTestLandmarkDataModule, TORCHVISION_RGB_MEAN, \
     TORCHVISION_RGB_STD, FullLandmarkDataModule, WingLoss
@@ -35,9 +34,9 @@ def valid_transform(img_size: Tuple[int]):
 
 
 def get_model(num_landmarks: int, dropout_prob: float, train_backbone: bool):
-    backbone = models.resnet101(pretrained=True)
+    backbone = models.resnet18(pretrained=True)
 
-    return LandmarkPredictor(backbone=backbone, emb_dim=2048,
+    return LandmarkPredictor(backbone=backbone, emb_dim=512,
                              num_landmarks=num_landmarks, dropout_prob=dropout_prob, train_backbone=train_backbone)
 
 
