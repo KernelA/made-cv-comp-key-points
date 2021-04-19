@@ -57,8 +57,10 @@ def main(args):
                 height, width = batch["img_height"][num_image].item(
                 ), batch["img_width"][num_image].item()
                 landmark_pos = denormalize_landmarks(normalized_landmark_pos, width, height)
-                selected_points = torch.index_select(landmark_pos, dim=0, index=indices).cpu()
-                csv_writer.writerow(selected_points)
+                selected_points = torch.index_select(
+                    landmark_pos, dim=0, index=indices).cpu().to(torch.long).numpy()
+                csv_writer.writerow([batch["image_name"][num_image]] +
+                                    list(selected_points.ravel()))
 
     logging.getLogger().info("Save predcition to '%s'", args.pred_file)
 
@@ -69,8 +71,8 @@ if __name__ == '__main__':
     parser.add_argument("--data_dir", type=is_dir, required=True)
     parser.add_argument("--pred_file", type=str, required=True, help="A path to save predictions")
     parser.add_argument("--checkpoint", type=is_file, required=True)
-    parser.add_argument("--num_workers", type=int, default=2)
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--num_workers", type=int, default=4)
+    parser.add_argument("--batch_size", type=int, default=128)
 
     args = parser.parse_args()
 
