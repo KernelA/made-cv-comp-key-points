@@ -103,12 +103,12 @@ test-run:
     size: 2090142348
     nfiles: 64001
   - path: ./face_landmarks/
-    md5: cfbd74d08817447c56bcffae40d2caf3.dir
-    size: 33153
+    md5: c2886b69dda260570545d70fe4546e3b.dir
+    size: 36723
     nfiles: 22
   - path: ./main_train.py
-    md5: 6c1209555c865350285e35ec89259bad
-    size: 6406
+    md5: 564acc93f57170dbb8669a800bb3578d
+    size: 6630
   - path: ./model/
     md5: 3ebd9fc197e1182d53060fc88563f2fe.dir
     size: 2348
@@ -128,13 +128,13 @@ test-run:
         weight_decay: 0
         amsgrad: true
       TrainParams:
-        train_size: 0.8
+        train_size: 0.85
         num_landmarks: 971
-        dropout_prob: 0.25
-        check_val_every_n_epoch: 2
-        flush_logs_every_n_steps: 10
+        dropout_prob: 0.2
+        check_val_every_n_epoch: 5
+        flush_logs_every_n_steps: 100
         precision: 16
-        max_epochs: 50
+        max_epochs: 60
         train_backbone: true
   outs:
   - path: ./exp/test_run
