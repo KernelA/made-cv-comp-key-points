@@ -1,8 +1,10 @@
 import csv
+import json
 import logging
 
 import configargparse
 import torch
+from torch.nn import functional as F
 from torch.utils import data
 from torchvision import transforms
 from tqdm import tqdm
@@ -24,14 +26,56 @@ def get_transforms():
 
 
 @torch.no_grad()
+def make_prediction(model, data_loader, pred_file):
+    with open(pred_file, "w", encoding="utf-8", newline="") as file:
+        csv_writer = csv.writer(file)
+
+        csv_writer.writerow(
+            ["file_name"] + sum([[f"Point_M{i}_X", f"Point_M{i}_Y"] for i in range(30)], start=[]))
+
+        for batch in tqdm(data_loader, total=len(data_loader)):
+            batch_size = batch["image"].shape[0]
+            predicted_landmarks = model(batch).view(batch_size, -1, 2)
+
+            for num_image, (normalized_landmark_pos, indices) in enumerate(zip(predicted_landmarks, batch["point_indices"])):
+                height, width = batch["img_height"][num_image].item(
+                ), batch["img_width"][num_image].item()
+                landmark_pos = denormalize_landmarks(normalized_landmark_pos, width, height)
+                selected_points = torch.flatten(torch.index_select(
+                    landmark_pos, dim=0, index=indices).cpu().to(torch.long))
+                csv_writer.writerow([batch["image_name"][num_image]] +
+                                    list(selected_points))
+
+    logging.getLogger().info("Save predcition to '%s'", args.pred_file)
+
+
+@torch.no_grad()
+def error_anal(model, data_loader):
+    loss_values = dict()
+
+    for batch in tqdm(data_loader, total=len(data_loader)):
+        batch_size = batch["image"].shape[0]
+        predicted_landmarks = model(batch).view(batch_size, -1)
+
+        error = F.mse_loss(
+            predicted_landmarks, batch["norm_landmarks"].view(batch_size, -1), reduction="none")
+
+        for i, image_name in enumerate(batch["image_name"]):
+            loss_values[image_name] = error[i]
+
+    return loss_values
+
+
+@torch.no_grad()
 def main(args):
-    dataset = LandMarkDatset(path_to_dir=args.data_dir, is_train=False,
+    dataset = LandMarkDatset(path_to_dir=args.data_dir, is_train=args.error_anal,
                              transformations=get_transforms())
 
     test_loader = data.DataLoader(dataset, num_workers=args.num_workers, batch_size=args.batch_size,
                                   shuffle=False, drop_last=False, pin_memory=True)
 
     train_params = TrainParams()
+
     model = get_model(train_params.num_landmarks, train_params.dropout_prob,
                       train_params.train_backbone)
 
@@ -43,26 +87,13 @@ def main(args):
         optimizer_params=None, target_metric_name=None)
     model.freeze()
 
-    with open(args.pred_file, "w", encoding="utf-8", newline="") as file:
-        csv_writer = csv.writer(file)
-
-        csv_writer.writerow(
-            ["file_name"] + sum([[f"Point_M{i}_X", f"Point_M{i}_Y"] for i in range(30)], start=[]))
-
-        for batch in tqdm(test_loader, total=len(test_loader)):
-            batch_size = batch["image"].shape[0]
-            predicted_landmarks = model(batch).view(batch_size, -1, 2)
-
-            for num_image, (normalized_landmark_pos, indices) in enumerate(zip(predicted_landmarks, batch["point_indices"])):
-                height, width = batch["img_height"][num_image].item(
-                ), batch["img_width"][num_image].item()
-                landmark_pos = denormalize_landmarks(normalized_landmark_pos, width, height)
-                selected_points = torch.index_select(
-                    landmark_pos, dim=0, index=indices).cpu().to(torch.long).numpy()
-                csv_writer.writerow([batch["image_name"][num_image]] +
-                                    list(selected_points.ravel()))
-
-    logging.getLogger().info("Save predcition to '%s'", args.pred_file)
+    if args.error_anal:
+        with open(args.pred_file, "w", encoding="utf-8") as file:
+            error_by_image = error_anal(model, test_loader)
+            json.dump(error_by_image, file)
+        logging.getLogger().info("Save errors to '%s'", args.pred_file)
+    else:
+        make_prediction(model, test_loader, args.pred_file)
 
 
 if __name__ == '__main__':
@@ -72,7 +103,8 @@ if __name__ == '__main__':
     parser.add_argument("--pred_file", type=str, required=True, help="A path to save predictions")
     parser.add_argument("--checkpoint", type=is_file, required=True)
     parser.add_argument("--num_workers", type=int, default=4)
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--error_anal", action="store_true")
 
     args = parser.parse_args()
 
