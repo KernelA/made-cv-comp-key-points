@@ -63,7 +63,8 @@ def main(args):
                                             train_num_workers=args.train_num_workers,
                                             valid_num_workers=args.valid_num_workers,
                                             random_state=RANDOM_STATE,
-                                            train_transforms=train_tr)
+                                            train_transforms=train_tr,
+                                            precompute_data=args.precompute_data)
     else:
         datamodule = TrainTestLandmarkDataModule(path_to_dir=args.data_dir,
                                                  train_batch_size=args.train_batch_size,
@@ -72,7 +73,9 @@ def main(args):
                                                  valid_num_workers=args.valid_num_workers,
                                                  random_state=RANDOM_STATE,
                                                  train_size=train_params.train_size,
-                                                 train_transforms=train_tr, val_transforms=valid_tr)
+                                                 precompute_data=args.precompute_data,
+                                                 train_transforms=train_tr,
+                                                 val_transforms=valid_tr)
 
     model = get_model(train_params.num_landmarks, train_params.dropout_prob,
                       train_params.train_backbone)
@@ -108,7 +111,7 @@ def main(args):
     gpus = -1 if torch.cuda.is_available() else 0
 
     trainer = pl.Trainer(amp_backend="native",
-                         auto_scale_batch_size=True,
+                         auto_scale_batch_size="binsearch",
                          gpus=gpus,
                          logger=logger,
                          auto_select_gpus=True,
@@ -139,6 +142,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_dir", type=is_dir, required=True)
     parser.add_argument("--exp_dir", type=str, required=True)
     parser.add_argument("--fast_dev_run", action="store_true")
+    parser.add_argument("--precompute_data", action="store_true")
 
     args = parser.parse_args()
 
