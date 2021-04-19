@@ -73,12 +73,13 @@ def main(args):
     dataset = LandMarkDatset(path_to_dir=args.data_dir, is_train=args.error_anal,
                              transformations=get_transforms())
 
-    dump_dir = os.path.join(args.data_dir, "dump")
+    if args.precompute:
+        dump_dir = os.path.join(args.data_dir, "dump")
 
-    if os.path.isdir(dump_dir):
-        shutil.rmtree(dump_dir)
-    os.makedirs(dump_dir, exist_ok=True)
-    dataset.precompute(dump_dir)
+        if os.path.isdir(dump_dir):
+            shutil.rmtree(dump_dir)
+        os.makedirs(dump_dir, exist_ok=True)
+        dataset.precompute(dump_dir)
 
     test_loader = data.DataLoader(dataset, num_workers=args.num_workers, batch_size=args.batch_size,
                                   shuffle=False, drop_last=False, pin_memory=True)
@@ -114,6 +115,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--error_anal", action="store_true")
+    parser.add_argument("--precompute", action="store_true")
 
     args = parser.parse_args()
 
