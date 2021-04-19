@@ -1,6 +1,8 @@
 import csv
 import json
 import logging
+import os
+import shutil
 
 import configargparse
 import torch
@@ -57,11 +59,11 @@ def error_anal(model, data_loader):
         batch_size = batch["image"].shape[0]
         predicted_landmarks = model(batch).view(batch_size, -1)
 
-        error = F.mse_loss(
-            predicted_landmarks, batch["norm_landmarks"].view(batch_size, -1), reduction="none")
+        error = torch.mean(F.mse_loss(
+            predicted_landmarks, batch["norm_landmarks"].view(batch_size, -1), reduction="none"), dim=1)
 
         for i, image_name in enumerate(batch["image_name"]):
-            loss_values[image_name] = error[i]
+            loss_values[image_name] = error[i].item()
 
     return loss_values
 
@@ -70,6 +72,13 @@ def error_anal(model, data_loader):
 def main(args):
     dataset = LandMarkDatset(path_to_dir=args.data_dir, is_train=args.error_anal,
                              transformations=get_transforms())
+
+    dump_dir = os.path.join(args.data_dir, "dump")
+
+    if os.path.isdir(dump_dir):
+        shutil.rmtree(dump_dir)
+    os.makedirs(dump_dir, exist_ok=True)
+    dataset.precompute(dump_dir)
 
     test_loader = data.DataLoader(dataset, num_workers=args.num_workers, batch_size=args.batch_size,
                                   shuffle=False, drop_last=False, pin_memory=True)
@@ -88,8 +97,8 @@ def main(args):
     model.freeze()
 
     if args.error_anal:
+        error_by_image = error_anal(model, test_loader)
         with open(args.pred_file, "w", encoding="utf-8") as file:
-            error_by_image = error_anal(model, test_loader)
             json.dump(error_by_image, file)
         logging.getLogger().info("Save errors to '%s'", args.pred_file)
     else:

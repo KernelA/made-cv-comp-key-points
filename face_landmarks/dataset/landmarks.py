@@ -3,9 +3,10 @@ import logging
 from typing import Iterable, List, Union
 import logging
 import ast
-
+import shutil
 
 import torch
+from tqdm import trange
 from torch.utils import data
 import pytorch_lightning as pl
 import pandas as pd
@@ -29,6 +30,8 @@ class LandMarkDatset(data.Dataset):
             self._path_to_dir, split_type,
             "landmarks.csv" if is_train else "test_points.csv")
 
+        self._dump_dir = None
+
         landmarks_data = pd.read_csv(
             csv_landmarks_date, sep="\t", index_col="file_name", engine="c")
 
@@ -50,25 +53,42 @@ class LandMarkDatset(data.Dataset):
     def __len__(self):
         return len(self._image_names)
 
+    def precompute(self, dump_dir: str):
+        self._logger.info("Precompute data and save tensor to %s", dump_dir)
+
+        for i in trange(len(self)):
+            data = self[i]
+            path_to_dump = os.path.join(dump_dir, data["image_name"])
+            torch.save(data, self._get_dump_path(path_to_dump))
+
+        self._dump_dir = dump_dir
+
+    def _get_dump_path(self, path):
+        return os.path.splitext(path)[0] + ".pth"
+
     def __getitem__(self, index):
-        image = read_image(os.path.join(self._image_dir, self._image_names[index]))
-
-        height, width = image.shape[-2:]
-
-        if self.transformations is not None:
-            image = self.transformations(image)
-
-        data = {"image": image, "image_name": self._image_names[index]}
-
-        if self._is_train:
-            data["norm_landmarks"] = normalize_landmarks(
-                self._landmarks_points[index], width, height)
+        if self._dump_dir is not None:
+            dump_path = os.path.join(self._dump_dir, self._image_names[index])
+            return torch.load(self._get_dump_path(dump_path))
         else:
-            data["point_indices"] = self._point_indices[index]
-            data["img_height"] = height
-            data["img_width"] = width
+            image = read_image(os.path.join(self._image_dir, self._image_names[index]))
 
-        return data
+            height, width = image.shape[-2:]
+
+            if self.transformations is not None:
+                image = self.transformations(image)
+
+            data = {"image": image, "image_name": self._image_names[index]}
+
+            if self._is_train:
+                data["norm_landmarks"] = normalize_landmarks(
+                    self._landmarks_points[index], width, height)
+            else:
+                data["point_indices"] = self._point_indices[index]
+                data["img_height"] = height
+                data["img_width"] = width
+
+            return data
 
 
 class FullLandmarkDataModule(pl.LightningDataModule):
@@ -99,6 +119,14 @@ class FullLandmarkDataModule(pl.LightningDataModule):
             path_to_dir=self._data_dir, is_train=True, transformations=self.train_transforms)
 
         self._train_dataset = general_dataset
+
+        dump_dir = os.path.join(self._data_dir, "train_dump")
+
+        if os.path.isdir(dump_dir):
+            shutil.rmtree(dump_dir)
+        os.makedirs(dump_dir, exist_ok=True)
+
+        self._train_dataset.precompute(dump_dir)
 
     def train_dataloader(self):
         return data.DataLoader(self._train_dataset, shuffle=True, drop_last=True,
@@ -134,6 +162,14 @@ class TrainTestLandmarkDataModule(FullLandmarkDataModule):
             self._train_dataset, lengths=[train_size, test_size], generator=generator)
 
         self._test_datset.dataset.transformations = self.val_transforms
+
+        dump_dir = os.path.join(self._data_dir, "test_dump")
+
+        if os.path.isdir(dump_dir):
+            shutil.rmtree(dump_dir)
+        os.makedirs(dump_dir, exist_ok=True)
+
+        self._test_datset.precompute(dump_dir)
 
     def val_dataloader(self):
         return data.DataLoader(self._test_datset, batch_size=self._val_batch_size,
