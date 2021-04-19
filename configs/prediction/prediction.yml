@@ -1,3 +1,4 @@
 data_dir: ./data/test-train/contest01_data
 pred_file: ./resnet_subm.csv
 num_workers: 4
+batch_size: 32
