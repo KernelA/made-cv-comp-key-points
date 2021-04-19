@@ -53,4 +53,5 @@ stages:
           - OptimizerParams
           - TrainParams
     outs:
-      - ./exp/test_run
+      - ./exp/test_run:
+          cache: false
