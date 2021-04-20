@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Iterable, List, Union
+from typing import Iterable, List, Union, Optional
 import logging
 import ast
 import shutil
@@ -16,8 +16,9 @@ from .utils import read_image, normalize_landmarks
 
 
 class LandMarkDatset(data.Dataset):
-    def __init__(self, *, path_to_dir: str, is_train: bool, transformations) -> None:
+    def __init__(self, *, path_to_dir: str, is_train: bool, transformations, ignore_images: Optional[List[str]] = None) -> None:
         assert os.path.isdir(path_to_dir)
+        assert not is_train and ignore_images, "Dataset is not a train and cannot ignore images"
         super().__init__()
         self._logger = logging.getLogger("kp.dataset")
         self._path_to_dir = path_to_dir
@@ -34,6 +35,11 @@ class LandMarkDatset(data.Dataset):
 
         landmarks_data = pd.read_csv(
             csv_landmarks_date, sep="\t", index_col="file_name", engine="c")
+
+        if is_train and ignore_images is not None:
+            self._logger.info(
+                "Drop images with specified names. Total images is %d", len(ignore_images))
+            landmarks_data.drop(index=ignore_images, inplace=True)
 
         self._image_names = landmarks_data.index.tolist()
 
@@ -94,7 +100,8 @@ class LandMarkDatset(data.Dataset):
 class FullLandmarkDataModule(pl.LightningDataModule):
     def __init__(self, *, path_to_dir: str, train_batch_size: int,
                  train_num_workers: int, val_batch_size: int, valid_num_workers: int, random_state: int,
-                 train_size: float = 1, precompute_data: bool, train_transforms=None,
+                 train_size: float = 1, precompute_data: bool, ignore_train_images: Optional[List[str]],
+                 train_transforms=None,
                  val_transforms=None, test_transforms=None, dims=None):
         assert os.path.isdir(path_to_dir), f"Input '{path_to_dir}' does not exist"
         assert train_batch_size > 0
@@ -113,11 +120,13 @@ class FullLandmarkDataModule(pl.LightningDataModule):
         self._valid_num_workers = valid_num_workers
         self._train_dataset = self._test_datset = None
         self._precompute_data = precompute_data
+        self._ignore_train_images = ignore_train_images
         self._logger = logging.getLogger("kp.datamodule")
 
     def setup(self, stage=None):
         general_dataset = LandMarkDatset(
-            path_to_dir=self._data_dir, is_train=True, transformations=self.train_transforms)
+            path_to_dir=self._data_dir, is_train=True, ignore_images=self._ignore_train_images,
+            transformations=self.train_transforms)
 
         self._train_dataset = general_dataset
 
@@ -140,6 +149,7 @@ class TrainTestLandmarkDataModule(FullLandmarkDataModule):
     def __init__(self, *, path_to_dir: str, train_batch_size: int,
                  train_num_workers: int, val_batch_size: int, valid_num_workers: int,
                  random_state: int, train_size: float, precompute_data: bool,
+                 ignore_train_images: Optional[List[str]],
                  train_transforms=None, val_transforms=None, test_transforms=None, dims=None):
         super().__init__(path_to_dir=path_to_dir,
                          train_batch_size=train_batch_size,
@@ -149,6 +159,7 @@ class TrainTestLandmarkDataModule(FullLandmarkDataModule):
                          valid_num_workers=valid_num_workers,
                          random_state=random_state,
                          train_size=train_size,
+                         ignore_train_images=ignore_train_images,
                          train_transforms=train_transforms,
                          val_transforms=val_transforms,
                          test_transforms=test_transforms,
@@ -170,15 +181,6 @@ class TrainTestLandmarkDataModule(FullLandmarkDataModule):
             self._train_dataset, lengths=[train_size, test_size], generator=generator)
 
         self._test_datset.dataset.transformations = self.val_transforms
-
-        if self._precompute_data:
-            dump_dir = os.path.join(self._data_dir, "test_dump")
-
-            if os.path.isdir(dump_dir):
-                shutil.rmtree(dump_dir)
-            os.makedirs(dump_dir, exist_ok=True)
-
-            self._test_datset.precompute(dump_dir)
 
     def val_dataloader(self):
         return data.DataLoader(self._test_datset, batch_size=self._val_batch_size,

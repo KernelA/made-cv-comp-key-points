@@ -7,13 +7,15 @@ from ..dataset import plot_landmarks, denormalize_landmarks
 
 
 class ModelTrain(pl.LightningModule):
-    def __init__(self, model, loss_func, optimizer_params, target_metric_name: str, save_img_every_train_batch: int = 10):
+    def __init__(self, *, model, loss_func, optimizer_params, scheduler_params, target_metric_name: str,
+                 save_img_every_train_batch: int = 50):
         super().__init__()
         self._model = model
         self._loss_func = loss_func
         self._opt_params = optimizer_params
         self._target_metric = target_metric_name
         self._loss_name = "Loss"
+        self._scheduler_params = scheduler_params
         self._save_img_every_train_batch = save_img_every_train_batch
 
     def forward(self, data: dict):
@@ -46,8 +48,8 @@ class ModelTrain(pl.LightningModule):
             predicted_norm_positions.shape[0], batch["norm_landmarks"])
 
         loss = self._loss_func(predicted_norm_positions, normalized_landmarks)
-        mse_loss_value = torch.mean(F.mse_loss(predicted_norm_positions,
-                                               normalized_landmarks, reduction="none"), dim=1)
+        mse_loss_value = torch.sum(F.mse_loss(predicted_norm_positions,
+                                              normalized_landmarks, reduction="none"), dim=1)
 
         if self.global_step % self._save_img_every_train_batch == 0:
             index_max_error = mse_loss_value.argmax()
@@ -72,8 +74,8 @@ class ModelTrain(pl.LightningModule):
         normalized_landmarks = self._transform_landmarks(
             predicted_norm_positions.shape[0], batch["norm_landmarks"])
 
-        mse_loss_values = torch.mean(F.mse_loss(predicted_norm_positions,
-                                                normalized_landmarks, reduction="none"), dim=1)
+        mse_loss_values = torch.sum(F.mse_loss(predicted_norm_positions,
+                                               normalized_landmarks, reduction="none"), dim=1)
 
         index_max_error = mse_loss_values.argmax()
         index_min_error = mse_loss_values.argmin()
@@ -91,6 +93,6 @@ class ModelTrain(pl.LightningModule):
         optimizer = torch.optim.Adam(
             self.parameters(), **self._opt_params.__dict__)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, min_lr=1e-6, verbose=True, mode="min")
+            optimizer, **self._scheduler_params.__dict__)
 
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": self._loss_name}

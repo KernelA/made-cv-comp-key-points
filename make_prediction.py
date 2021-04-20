@@ -94,7 +94,7 @@ def main(args):
     model = ModelTrain.load_from_checkpoint(
         args.checkpoint, map_location=location,
         model=model, loss_func=None,
-        optimizer_params=None, target_metric_name=None)
+        optimizer_params=None, scheduler_params=None, target_metric_name=None)
     model.freeze()
 
     if args.error_anal:

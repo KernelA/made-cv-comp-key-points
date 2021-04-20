@@ -43,14 +43,16 @@ def main(args):
     with zipfile.ZipFile(args.zip, "r") as zip_file:
         zip_file.extractall(out_dir)
 
-    check_images(out_dir)
+    if args.check_images:
+        check_images(out_dir)
 
 
 if __name__ == '__main__':
     parser = configargparse.ArgParser()
-    parser.add_argument("-c", required=True, is_config_file=True, help="A config file")
+    parser.add_argument("-c", required=False, is_config_file=True, help="A config file")
     parser.add_argument("--zip", type=is_file, required=True)
     parser.add_argument("--out_dir", type=str, required=True)
+    parser.add_argument("--check_images", action="store_true")
 
     args = parser.parse_args()
 

@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, Tuple
 import pathlib
 
@@ -10,14 +11,14 @@ from torchvision import transforms
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 
-from cli_utils import is_dir
+from cli_utils import is_dir, is_file
 from face_landmarks import ModelTrain, TrainTestLandmarkDataModule, TORCHVISION_RGB_MEAN, \
     TORCHVISION_RGB_STD, FullLandmarkDataModule, WingLoss
 from model import LandmarkPredictor
-from params import LossParams, TrainParams, RANDOM_STATE, OptimizerParams
+from params import LossParams, SchedulerPrams, TrainParams, RANDOM_STATE, OptimizerParams
 
 
-def train_transform(img_size: Tuple[int]):
+def train_transform(img_size: Tuple[int, int]):
     return transforms.Compose([
         transforms.ConvertImageDtype(torch.get_default_dtype()),
         transforms.Resize(img_size),
@@ -25,7 +26,7 @@ def train_transform(img_size: Tuple[int]):
     ])
 
 
-def valid_transform(img_size: Tuple[int]):
+def valid_transform(img_size: Tuple[int, int]):
     return transforms.Compose([
         transforms.ConvertImageDtype(torch.get_default_dtype()),
         transforms.Resize(img_size),
@@ -44,6 +45,11 @@ def get_loss(w: float, eps: float, reduction: Optional[str]):
     return torch.jit.script(WingLoss(w, eps, reduction))
 
 
+def load_ignore_images(path_to_images):
+    with open(path_to_images, "r", encoding="utf-8") as file:
+        return list(map(str.strip, file.readlines()))
+
+
 def main(args):
     pl.seed_everything(RANDOM_STATE)
 
@@ -52,12 +58,17 @@ def main(args):
 
     train_params = TrainParams()
 
-    img_size = (192, 256)
+    train_tr, valid_tr = train_transform(
+        train_params.img_size_in_batch), valid_transform(train_params.img_size_in_batch)
 
-    train_tr, valid_tr = train_transform(img_size), valid_transform(img_size)
+    ignore_train_images_list = None
+
+    if args.ignore_images is not None:
+        ignore_train_images_list = load_ignore_images(args.ignore_images)
 
     if train_params.train_size == 1:
         datamodule = FullLandmarkDataModule(path_to_dir=args.data_dir,
+                                            ignore_train_images=ignore_train_images_list,
                                             train_batch_size=args.train_batch_size,
                                             val_batch_size=args.valid_batch_size,
                                             train_num_workers=args.train_num_workers,
@@ -67,6 +78,7 @@ def main(args):
                                             precompute_data=args.precompute_data)
     else:
         datamodule = TrainTestLandmarkDataModule(path_to_dir=args.data_dir,
+                                                 ignore_train_images=ignore_train_images_list,
                                                  train_batch_size=args.train_batch_size,
                                                  val_batch_size=args.valid_batch_size,
                                                  train_num_workers=args.train_num_workers,
@@ -85,10 +97,13 @@ def main(args):
     loss = get_loss(loss_params.w, loss_params.eps, loss_params.redcution)
 
     opt_params = OptimizerParams()
+    scheduler_params = SchedulerPrams()
 
     target_metric_name = "Val MSE loss"
 
-    train_module = ModelTrain(model, loss, opt_params, target_metric_name,
+    train_module = ModelTrain(model=model, loss_func=loss, optimizer_params=opt_params,
+                              scheduler_params=scheduler_params,
+                              target_metric_name=target_metric_name,
                               save_img_every_train_batch=25)
 
     checkpoint_dir = exp_dir / "checkpoint"
@@ -108,7 +123,10 @@ def main(args):
 
     logger = TensorBoardLogger(str(log_dir))
 
-    gpus = -1 if torch.cuda.is_available() else 0
+    gpus = -1 if torch.cuda.is_available() else None
+
+    if gpus is None:
+        logging.getLogger().warning("GPU is not available. Try train on CPU. It may will bew very slow")
 
     trainer = pl.Trainer(amp_backend="native",
                          auto_scale_batch_size="binsearch",
@@ -143,6 +161,8 @@ if __name__ == '__main__':
     parser.add_argument("--exp_dir", type=str, required=True)
     parser.add_argument("--fast_dev_run", action="store_true")
     parser.add_argument("--precompute_data", action="store_true")
+    parser.add_argument("--ignore_images", required=False, default=None, type=is_file,
+                        help="A path to txt files with image to ignore during training (bad images)")
 
     args = parser.parse_args()
 
