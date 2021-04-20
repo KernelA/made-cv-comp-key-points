@@ -8,8 +8,8 @@ unzip:
     md5: f7d2134eb7b54aef3b56ae4cfc683ab7
     size: 2186362366
   - path: ./unzip.py
-    md5: ea0334e3ff9614bfcf5f36fb9e9739cd
-    size: 1807
+    md5: 6ee7df2f6decc987eb7a982248eb90d7
+    size: 1903
   outs:
   - path: ./data/test-train/contest01_data
     md5: caec7946fd41a447a13aaf84f6486866.dir
@@ -96,19 +96,19 @@ test-run:
     ./exp/test_run --valid_batch_size 16 --train_batch_size 16
   deps:
   - path: ./configs/train/train.yml
-    md5: 097d1c72da6187764475c39e9b857fd8
-    size: 177
+    md5: 9f32a5bd1e4786af4d56f2581acd8fdd
+    size: 218
   - path: ./data/test-train/contest01_data/train
     md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
     size: 2090142348
     nfiles: 64001
   - path: ./face_landmarks/
-    md5: c2886b69dda260570545d70fe4546e3b.dir
-    size: 36723
+    md5: d42bdcc609764ba7926338e08f85b491.dir
+    size: 37507
     nfiles: 22
   - path: ./main_train.py
-    md5: 564acc93f57170dbb8669a800bb3578d
-    size: 6630
+    md5: 47734f812ed48d2a223eb6830e2c7d8d
+    size: 7726
   - path: ./model/
     md5: 3ebd9fc197e1182d53060fc88563f2fe.dir
     size: 2348
@@ -134,10 +134,41 @@ test-run:
         check_val_every_n_epoch: 5
         flush_logs_every_n_steps: 100
         precision: 16
-        max_epochs: 60
+        max_epochs: 50
         train_backbone: true
+        img_size_in_batch:
+        - 176
+        - 228
   outs:
   - path: ./exp/test_run
     md5: d751713988987e9331980363e24189ce.dir
     size: 0
     nfiles: 0
+prediction:
+  cmd: python ./make_prediction.py --checkpoint "C:\Users\alex9\Downloads\exp\train\checkpoint\epoch=19-Val
+    MSE loss=0.0967.ckpt" -c ./configs/prediction/prediction.yml
+  deps:
+  - path: ./configs/prediction/prediction.yml
+    md5: deae745bdefe3642909e7bd7458f24d6
+    size: 106
+  - path: ./make_prediction.py
+    md5: 714b85b76684898105442bd05b032ed7
+    size: 4620
+  params:
+    params.py:
+      TrainParams:
+        train_size: 0.85
+        num_landmarks: 971
+        dropout_prob: 0.2
+        check_val_every_n_epoch: 5
+        flush_logs_every_n_steps: 100
+        precision: 16
+        max_epochs: 50
+        train_backbone: true
+        img_size_in_batch:
+        - 176
+        - 228
+  outs:
+  - path: ./resnet_subm.csv
+    md5: 07c7a035a446de54bcaf67021604c5e5
+    size: 23958

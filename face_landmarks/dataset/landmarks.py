@@ -18,7 +18,8 @@ from .utils import read_image, normalize_landmarks
 class LandMarkDatset(data.Dataset):
     def __init__(self, *, path_to_dir: str, is_train: bool, transformations, ignore_images: Optional[List[str]] = None) -> None:
         assert os.path.isdir(path_to_dir)
-        assert not is_train and ignore_images, "Dataset is not a train and cannot ignore images"
+        if not is_train and ignore_images is not None:
+            raise ValueError("Dataset is not a train and cannot ignore images")
         super().__init__()
         self._logger = logging.getLogger("kp.dataset")
         self._path_to_dir = path_to_dir
