@@ -2,8 +2,7 @@ import torch
 from torch.nn import functional as F
 import pytorch_lightning as pl
 
-from ..costants import TORCHVISION_RGB_MEAN, TORCHVISION_RGB_STD
-from ..dataset import plot_landmarks, denormalize_landmarks
+from ..dataset import plot_landmarks, denormalize_tensor_to_image
 
 
 class ModelTrain(pl.LightningModule):
@@ -25,17 +24,15 @@ class ModelTrain(pl.LightningModule):
         return norm_landmarks.view(batch_size, -1)
 
     def _tensor_to_image(self, tensor_image):
-        return tensor_image * TORCHVISION_RGB_STD[:, None, None] + TORCHVISION_RGB_MEAN[:, None, None]
+        return denormalize_tensor_to_image(tensor_image)
 
     def _plot_landmarks(self, image, predicted_landmarks, true_landmarks):
         pred_image = self._tensor_to_image(image.detach().cpu()).permute(1, 2, 0)
-        height, width = pred_image.shape[:2]
 
-        true_landmarks = denormalize_landmarks(
-            true_landmarks.view(-1, 2).detach().cpu().to(torch.get_default_dtype()), width, height)
+        true_landmarks = true_landmarks.view(-1, 2).detach().cpu().to(torch.get_default_dtype())
 
-        pred_landmarks = denormalize_landmarks(predicted_landmarks.view(
-            -1, 2).detach().cpu().to(torch.get_default_dtype()), width, height)
+        pred_landmarks = predicted_landmarks.view(-1,
+                                                  2).detach().cpu().to(torch.get_default_dtype())
 
         pred_figure = plot_landmarks(pred_image, pred_landmarks,
                                      true_landmarks=true_landmarks)
@@ -45,7 +42,7 @@ class ModelTrain(pl.LightningModule):
         predicted_norm_positions = self(batch)
 
         normalized_landmarks = self._transform_landmarks(
-            predicted_norm_positions.shape[0], batch["norm_landmarks"])
+            predicted_norm_positions.shape[0], batch["landmarks"])
 
         loss = self._loss_func(predicted_norm_positions, normalized_landmarks)
         mse_loss_value = torch.sum(F.mse_loss(predicted_norm_positions,
@@ -60,7 +57,7 @@ class ModelTrain(pl.LightningModule):
 
                 pred_figure = self._plot_landmarks(
                     batch["image"][index], predicted_norm_positions[index],
-                    batch["norm_landmarks"][index])
+                    batch["landmarks"][index])
 
                 self.logger.experiment.add_figure(tag, pred_figure, global_step=self.global_step)
 
@@ -72,7 +69,7 @@ class ModelTrain(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         predicted_norm_positions = self(batch)
         normalized_landmarks = self._transform_landmarks(
-            predicted_norm_positions.shape[0], batch["norm_landmarks"])
+            predicted_norm_positions.shape[0], batch["landmarks"])
 
         mse_loss_values = torch.sum(F.mse_loss(predicted_norm_positions,
                                                normalized_landmarks, reduction="none"), dim=1)
@@ -83,11 +80,11 @@ class ModelTrain(pl.LightningModule):
         for tag, index in zip(("Valid/BestPred", "Valid/WorstPred"), (index_min_error, index_max_error)):
             pred_figure = self._plot_landmarks(
                 batch["image"][index], predicted_norm_positions[index],
-                batch["norm_landmarks"][index])
+                batch["landmarks"][index])
 
             self.logger.experiment.add_figure(tag, pred_figure, global_step=self.global_step)
 
-        self.log(self._target_metric, mse_loss_values.sum(), on_step=False, on_epoch=True)
+        self.log(self._target_metric, mse_loss_values.mean(), on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

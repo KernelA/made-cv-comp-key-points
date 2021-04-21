@@ -3,13 +3,13 @@ unzip:
   deps:
   - path: ./configs/prepare/unzip.yml
     md5: ff03768450dac832b7dc882386ed2090
-    size: 95
+    size: 93
   - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
     md5: f7d2134eb7b54aef3b56ae4cfc683ab7
     size: 2186362366
   - path: ./unzip.py
     md5: 6ee7df2f6decc987eb7a982248eb90d7
-    size: 1903
+    size: 1844
   outs:
   - path: ./data/test-train/contest01_data
     md5: caec7946fd41a447a13aaf84f6486866.dir
@@ -96,22 +96,25 @@ test-run:
     ./exp/test_run --valid_batch_size 16 --train_batch_size 16
   deps:
   - path: ./configs/train/train.yml
-    md5: 9f32a5bd1e4786af4d56f2581acd8fdd
-    size: 218
+    md5: 95440bf5fa9a521f2fe3d084791d8a1a
+    size: 266
+  - path: ./data/fixed_annot/fixed_landmarks.csv
+    md5: 6eaf9dbe3c9722b2d3fec5820add1004
+    size: 443387719
   - path: ./data/test-train/contest01_data/train
-    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
-    size: 2090142348
-    nfiles: 64001
+    md5: 1213b5b70ef12b883ab4e3eb3bd97265.dir
+    size: 2090582527
+    nfiles: 64007
   - path: ./face_landmarks/
-    md5: d42bdcc609764ba7926338e08f85b491.dir
-    size: 37507
+    md5: 0a3dee95706e83a46700ce77387a850a.dir
+    size: 41760
     nfiles: 22
   - path: ./main_train.py
-    md5: 47734f812ed48d2a223eb6830e2c7d8d
-    size: 7726
+    md5: b41efda8d65aa19dbe2d1c836f1a617c
+    size: 8182
   - path: ./model/
-    md5: 3ebd9fc197e1182d53060fc88563f2fe.dir
-    size: 2348
+    md5: a822df1cbadb6f678612325821937f16.dir
+    size: 2211
     nfiles: 4
   params:
     params.py:
@@ -120,7 +123,7 @@ test-run:
         eps: 2
         redcution: sum
       OptimizerParams:
-        lr: 0.0001
+        lr: 0.01
         betas:
         - 0.9
         - 0.999
@@ -137,8 +140,8 @@ test-run:
         max_epochs: 50
         train_backbone: true
         img_size_in_batch:
-        - 176
-        - 228
+        - 256
+        - 256
   outs:
   - path: ./exp/test_run
     md5: d751713988987e9331980363e24189ce.dir
@@ -175,12 +178,16 @@ fix_annot:
   cmd: python ./fix_faces.py -c ./configs/fix_annotation/fix_annotation.yml
   deps:
   - path: ./configs/fix_annotation/fix_annotation.yml
-    md5: 8ce08c116d3ad9702cbf62a30ff56a27
-    size: 58
+    md5: 1b0531cbc27fdf72c5793ba9edd9eed7
+    size: 106
   - path: ./data/test-train/contest01_data/train
-    md5: 0d2903f115f14c30a8f87c6360b0925f.dir
-    size: 2533747001
-    nfiles: 64003
+    md5: 1213b5b70ef12b883ab4e3eb3bd97265.dir
+    size: 2090582527
+    nfiles: 64007
   - path: ./fix_faces.py
-    md5: 005d3ff6eddbbf73269da423c2b32ed3
-    size: 4918
+    md5: bfe730e9469b2a88627e48f7b4e76a02
+    size: 5043
+  outs:
+  - path: ./data/fixed_annot/fixed_landmarks.csv
+    md5: 6eaf9dbe3c9722b2d3fec5820add1004
+    size: 443387719

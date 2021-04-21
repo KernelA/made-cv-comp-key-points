@@ -1,1 +1,2 @@
 image_dir: ./data/test-train/contest01_data/train/images
+out_file: ./data/fixed_annot/fixed_landmarks.csv

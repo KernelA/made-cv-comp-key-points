@@ -3,15 +3,20 @@ from typing import Tuple
 import torch
 from torchvision.transforms import functional as F
 
+from ..costants import TORCHVISION_RGB_MEAN, TORCHVISION_RGB_STD
 
-class ScaleMinSideToSize(torch.nn.Module):
+
+def denormalize_tensor_to_image(tensor_image):
+    return tensor_image * TORCHVISION_RGB_STD[:, None, None] + TORCHVISION_RGB_MEAN[:, None, None]
+
+
+class ScaleMinSideToSize:
     def __init__(self, size: Tuple[int, int], elem_name='image'):
-        super().__init__()
         self.size = size
         self.elem_name = elem_name
 
-    def forward(self, sample):
-        h, w, _ = sample[self.elem_name].shape
+    def __call__(self, sample):
+        h, w = sample[self.elem_name].shape[-2:]
 
         if h > w:
             f = self.size[0] / w
@@ -28,14 +33,14 @@ class ScaleMinSideToSize(torch.nn.Module):
         return sample
 
 
-class CropCenter(torch.nn.Module):
+class CropCenter:
     def __init__(self, size: int, elem_name='image'):
         self.size = size
         self.elem_name = elem_name
 
-    def forward(self, sample):
+    def __call__(self, sample):
         img = sample[self.elem_name]
-        h, w, _ = img.shape
+        h, w = img.shape[-2:]
         margin_h = (h - self.size) // 2
         margin_w = (w - self.size) // 2
         sample[self.elem_name] = img[:, margin_h:margin_h +
@@ -51,13 +56,12 @@ class CropCenter(torch.nn.Module):
         return sample
 
 
-class TransformByKeys(torch.nn.Module):
+class TransformByKeys:
     def __init__(self, transform, names):
-        super().__init__()
         self.transform = transform
         self.names = set(names)
 
-    def forward(self, sample):
+    def __call__(self, sample):
         for name in self.names:
             if name in sample:
                 sample[name] = self.transform(sample[name])

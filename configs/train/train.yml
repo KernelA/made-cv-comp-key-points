@@ -6,3 +6,4 @@ data_dir: ./data/test-train/contest01_data
 exp_dir: ./exp/train
 fast_dev_run: False
 ignore_images: ./data/filter_images.txt
+annotation_file: ./data/fixed_annot/fixed_landmarks.csv

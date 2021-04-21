@@ -4,7 +4,8 @@ import pathlib
 import math
 import os
 import logging
-
+import itertools
+from multiprocessing import Pool
 
 import configargparse
 import pandas as pd
@@ -87,24 +88,29 @@ def fix_landmars(landmark):
     return landmark
 
 
-def fix_faces(image_dir):
+def compute_stat(image_name, landmark):
+    stat1 = angle_variation(landmark[:64, :])
+    stat2 = angle_variation(landmark[64: 128, :])
+    return (image_name, stat1, stat2)
+
+
+def fix_faces(image_dir, out_path):
     logger = logging.getLogger("kp.main")
     image_dir_pathlib = pathlib.Path(image_dir)
 
     face_landmarks_path = image_dir_pathlib.parent / "landmarks.csv"
 
-    face_landmarks = pd.read_csv(face_landmarks_path, sep='\t',
-                                 engine="c", index_col="file_name")
+    face_landmarks: pd.DataFrame = pd.read_csv(face_landmarks_path, sep='\t',
+                                               engine="c", index_col="file_name")
 
     image_names = face_landmarks.index.tolist()
 
-    stats = [0] * len(image_names)
-
-    for i, image_name in tqdm(enumerate(image_names), desc="Calculate landmarks stat", total=len(image_names)):
-        img_landmark = face_landmarks.loc[image_name].to_numpy().reshape(-1, 2)
-        stat1 = angle_variation(img_landmark[:64, :])
-        stat2 = angle_variation(img_landmark[64: 128, :])
-        stats[i] = (image_name, stat1, stat2)
+    with Pool(os.cpu_count()) as workers:
+        stats = workers.starmap(compute_stat, zip(
+            image_names,
+            face_landmarks.to_numpy().reshape(len(image_names), -1, 2)
+        )
+        )
 
     stats = pd.DataFrame(data=stats, columns=["file", "stat1", "stat2"]).set_index("file")
 
@@ -113,8 +119,6 @@ def fix_faces(image_dir):
     logger.info("Detect %d noisy annotations", len(noisy))
 
     fixed_landmarks = face_landmarks.copy(deep=True)
-
-    is_first = False
 
     def save_debug_image(input_img_path, landmarks, fixed, out_path):
         image = plt.imread(input_img_path)
@@ -128,30 +132,34 @@ def fix_faces(image_dir):
         axes[1].plot(fixed[:, 0], fixed[:, 1], "go")
         fig.savefig(out_path)
 
+    num_save = 0
+
     for image_name in tqdm(noisy, desc="Fix landmarks", total=len(noisy)):
         landmark = face_landmarks.loc[image_name].to_numpy().reshape(-1, 2)
         fixed = fix_landmars(landmark)
         fixed_landmarks.loc[image_name] = np.round(fixed.reshape(-1)).astype(int)
-        if not is_first:
+        if num_save < 5:
             save_debug_image(image_dir_pathlib / image_name, landmark, fixed,
-                             face_landmarks_path.with_name("fix_landmarks_debug.jpg"))
-            is_first = True
+                             out_path.with_name(f"{num_save}_savefix_landmarks_debug.jpg"))
+            num_save += 1
 
     fixed_path = face_landmarks_path
-    fixed_landmarks.to_csv(fixed_path.with_name(
-        "fixed_landmarks.csv"), index=True, encoding="utf-8")
+    fixed_landmarks.to_csv(out_path, index=True, sep="\t", encoding="utf-8")
 
     logger.info("Save new landmarks to '%s'", fixed_path)
 
 
 def main(args):
-    fix_faces(args.image_dir)
+    out_path = pathlib.Path(args.out_file)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fix_faces(args.image_dir, out_path)
 
 
 if __name__ == "__main__":
     parser = configargparse.ArgParser()
     parser.add_argument("-c", is_config_file=True)
     parser.add_argument("--image_dir", required=True, type=is_dir)
+    parser.add_argument("--out_file", required=True, type=str)
 
     args = parser.parse_args()
 

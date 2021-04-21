@@ -30,6 +30,7 @@ stages:
     - ./main_train.py
     - ./model/
     - ./data/test-train/contest01_data/train
+    - ./data/fixed_annot/fixed_landmarks.csv
     params:
     - params.py:
       - LossParams
@@ -43,6 +44,7 @@ stages:
     deps:
     - ./configs/train/train.yml
     - ./data/test-train/contest01_data/train
+    - ./data/fixed_annot/fixed_landmarks.csv
     - ./face_landmarks/
     - ./main_train.py
     - ./model/
@@ -70,3 +72,5 @@ stages:
     - ./configs/fix_annotation/fix_annotation.yml
     - ./data/test-train/contest01_data/train
     - ./fix_faces.py
+    outs:
+    - ./data/fixed_annot/fixed_landmarks.csv
