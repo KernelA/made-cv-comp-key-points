@@ -6,6 +6,7 @@ import ast
 import shutil
 
 import torch
+import numpy as np
 from tqdm import trange
 from torch.utils import data
 import pytorch_lightning as pl
@@ -16,7 +17,8 @@ from .utils import read_image
 
 
 class LandMarkDatset(data.Dataset):
-    def __init__(self, *, path_to_dir: str, is_train: bool, transformations, ignore_images: Optional[List[str]] = None) -> None:
+    def __init__(self, *, path_to_dir: str, annot_file: Optional[str],
+                 is_train: bool, transformations, ignore_images: Optional[List[str]] = None) -> None:
         assert os.path.isdir(path_to_dir)
         if not is_train and ignore_images is not None:
             raise ValueError("Dataset is not a train and cannot ignore images")
@@ -28,9 +30,8 @@ class LandMarkDatset(data.Dataset):
         split_type = "train" if self._is_train else "test"
         self._image_dir = os.path.join(
             self._path_to_dir, split_type, "images")
-        csv_landmarks_date = os.path.join(
-            self._path_to_dir, split_type,
-            "landmarks.csv" if is_train else "test_points.csv")
+        csv_landmarks_date = annot_file if is_train else os.path.join(
+            self._path_to_dir, split_type, "test_points.csv")
 
         self._dump_dir = None
 
@@ -45,7 +46,7 @@ class LandMarkDatset(data.Dataset):
         self._image_names = landmarks_data.index.tolist()
 
         if self._is_train:
-            self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy()).reshape(
+            self._landmarks_points = torch.from_numpy(landmarks_data.to_numpy().astype(np.float32)).reshape(
                 len(self._image_names), len(landmarks_data.columns) // 2, 2)
         else:
             self._point_indices = torch.LongTensor(
@@ -88,18 +89,19 @@ class LandMarkDatset(data.Dataset):
                 data["point_indices"] = self._point_indices[index]
 
             if self.transformations is not None:
-                image = self.transformations(image)
+                data = self.transformations(data)
 
             return data
 
 
 class FullLandmarkDataModule(pl.LightningDataModule):
-    def __init__(self, *, path_to_dir: str, train_batch_size: int,
+    def __init__(self, *, path_to_dir: str, annot_file: str, train_batch_size: int,
                  train_num_workers: int, val_batch_size: int, valid_num_workers: int, random_state: int,
                  train_size: float = 1, precompute_data: bool, ignore_train_images: Optional[List[str]],
                  train_transforms=None,
                  val_transforms=None, test_transforms=None, dims=None):
         assert os.path.isdir(path_to_dir), f"Input '{path_to_dir}' does not exist"
+        assert os.path.isfile(annot_file), f"'{annot_file}' is not a file"
         assert train_batch_size > 0
         assert val_batch_size > 0
         assert train_num_workers >= 0
@@ -117,12 +119,13 @@ class FullLandmarkDataModule(pl.LightningDataModule):
         self._train_dataset = self._test_datset = None
         self._precompute_data = precompute_data
         self._ignore_train_images = ignore_train_images
+        self._annot_file = annot_file
         self._logger = logging.getLogger("kp.datamodule")
 
     def setup(self, stage=None):
-        general_dataset = LandMarkDatset(
-            path_to_dir=self._data_dir, is_train=True, ignore_images=self._ignore_train_images,
-            transformations=self.train_transforms)
+        general_dataset = LandMarkDatset(annot_file=self._annot_file,
+                                         path_to_dir=self._data_dir, is_train=True, ignore_images=self._ignore_train_images,
+                                         transformations=self.train_transforms)
 
         self._train_dataset = general_dataset
 
@@ -142,12 +145,13 @@ class FullLandmarkDataModule(pl.LightningDataModule):
 
 
 class TrainTestLandmarkDataModule(FullLandmarkDataModule):
-    def __init__(self, *, path_to_dir: str, train_batch_size: int,
+    def __init__(self, *, path_to_dir: str, train_batch_size: int, annot_file: str,
                  train_num_workers: int, val_batch_size: int, valid_num_workers: int,
                  random_state: int, train_size: float, precompute_data: bool,
                  ignore_train_images: Optional[List[str]],
                  train_transforms=None, val_transforms=None, test_transforms=None, dims=None):
         super().__init__(path_to_dir=path_to_dir,
+                         annot_file=annot_file,
                          train_batch_size=train_batch_size,
                          train_num_workers=train_num_workers,
                          precompute_data=precompute_data,

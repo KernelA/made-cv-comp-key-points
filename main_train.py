@@ -1,7 +1,6 @@
 import logging
 from typing import Optional, Tuple
 import pathlib
-from utils import TransformByKeys
 
 import configargparse
 import torch
@@ -19,30 +18,26 @@ from model import LandmarkPredictor
 from params import LossParams, SchedulerPrams, TrainParams, RANDOM_STATE, OptimizerParams
 
 
-# train_transforms = transforms.Compose([
-#     transforms.ConvertImageDtype(torch.get_default_dtype()),
-#     ScaleMinSideToSize((CROP_SIZE, CROP_SIZE)),
-#     CropCenter(CROP_SIZE),
-#     TransformByKeys(transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.25, 0.25, 0.25]), ("image",)),
-# ])
-
-
 def train_transform(img_size: Tuple[int, int]):
-    return torch.jit.script(torch.nn.Sequential(
-        transforms.ConvertImageDtype(torch.get_default_dtype()),
+    return transforms.Compose([
+        TransformByKeys(transforms.ConvertImageDtype(torch.get_default_dtype()), ("image",)),
         ScaleMinSideToSize(img_size),
         CropCenter(img_size[0]),
         TransformByKeys(transforms.Normalize(mean=TORCHVISION_RGB_MEAN,
                                              std=TORCHVISION_RGB_STD), ("image",))
-    ))
+    ]
+    )
 
 
 def valid_transform(img_size: Tuple[int, int]):
-    return torch.jit.script(torch.nn.Sequential(
-        transforms.ConvertImageDtype(torch.get_default_dtype()),
-        transforms.Resize(img_size),
-        transforms.Normalize(mean=TORCHVISION_RGB_MEAN, std=TORCHVISION_RGB_STD)
-    ))
+    return transforms.Compose([
+        TransformByKeys(transforms.ConvertImageDtype(torch.get_default_dtype()), ("image",)),
+        ScaleMinSideToSize(img_size),
+        CropCenter(img_size[0]),
+        TransformByKeys(transforms.Normalize(mean=TORCHVISION_RGB_MEAN,
+                                             std=TORCHVISION_RGB_STD), ("image",))
+    ]
+    )
 
 
 def get_model(num_landmarks: int, dropout_prob: float, train_backbone: bool):
@@ -80,6 +75,7 @@ def main(args):
 
     if train_params.train_size == 1:
         datamodule = FullLandmarkDataModule(path_to_dir=args.data_dir,
+                                            annot_file=args.annot_file,
                                             ignore_train_images=ignore_train_images_list,
                                             train_batch_size=args.train_batch_size,
                                             val_batch_size=args.valid_batch_size,
@@ -90,6 +86,7 @@ def main(args):
                                             precompute_data=args.precompute_data)
     else:
         datamodule = TrainTestLandmarkDataModule(path_to_dir=args.data_dir,
+                                                 annot_file=args.annot_file,
                                                  ignore_train_images=ignore_train_images_list,
                                                  train_batch_size=args.train_batch_size,
                                                  val_batch_size=args.valid_batch_size,
@@ -173,6 +170,7 @@ if __name__ == '__main__':
     parser.add_argument("--exp_dir", type=str, required=True)
     parser.add_argument("--fast_dev_run", action="store_true")
     parser.add_argument("--precompute_data", action="store_true")
+    parser.add_argument("--annotation_file", dest="annot_file", required=True, type=is_file)
     parser.add_argument("--ignore_images", required=False, default=None, type=is_file,
                         help="A path to txt files with image to ignore during training (bad images)")
 

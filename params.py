@@ -30,7 +30,7 @@ class TrainParams:
         self.precision = 16
         self.max_epochs = 50
         self.train_backbone = True
-        self.img_size_in_batch = (176, 228)
+        self.img_size_in_batch = (256, 256)
 
 
 class LossParams:
