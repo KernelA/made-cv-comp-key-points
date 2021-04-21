@@ -1,6 +1,7 @@
 import logging
 from typing import Optional, Tuple
 import pathlib
+from utils import TransformByKeys
 
 import configargparse
 import torch
@@ -13,32 +14,43 @@ from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 from cli_utils import is_dir, is_file
 from face_landmarks import ModelTrain, TrainTestLandmarkDataModule, TORCHVISION_RGB_MEAN, \
-    TORCHVISION_RGB_STD, FullLandmarkDataModule, WingLoss
+    TORCHVISION_RGB_STD, FullLandmarkDataModule, WingLoss, ScaleMinSideToSize, CropCenter, TransformByKeys
 from model import LandmarkPredictor
 from params import LossParams, SchedulerPrams, TrainParams, RANDOM_STATE, OptimizerParams
 
 
+# train_transforms = transforms.Compose([
+#     transforms.ConvertImageDtype(torch.get_default_dtype()),
+#     ScaleMinSideToSize((CROP_SIZE, CROP_SIZE)),
+#     CropCenter(CROP_SIZE),
+#     TransformByKeys(transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.25, 0.25, 0.25]), ("image",)),
+# ])
+
+
 def train_transform(img_size: Tuple[int, int]):
-    return transforms.Compose([
+    return torch.jit.script(torch.nn.Sequential(
         transforms.ConvertImageDtype(torch.get_default_dtype()),
-        transforms.Resize(img_size),
-        transforms.Normalize(mean=TORCHVISION_RGB_MEAN, std=TORCHVISION_RGB_STD)
-    ])
+        ScaleMinSideToSize(img_size),
+        CropCenter(img_size[0]),
+        TransformByKeys(transforms.Normalize(mean=TORCHVISION_RGB_MEAN,
+                                             std=TORCHVISION_RGB_STD), ("image",))
+    ))
 
 
 def valid_transform(img_size: Tuple[int, int]):
-    return transforms.Compose([
+    return torch.jit.script(torch.nn.Sequential(
         transforms.ConvertImageDtype(torch.get_default_dtype()),
         transforms.Resize(img_size),
         transforms.Normalize(mean=TORCHVISION_RGB_MEAN, std=TORCHVISION_RGB_STD)
-    ])
+    ))
 
 
 def get_model(num_landmarks: int, dropout_prob: float, train_backbone: bool):
-    backbone = models.resnet18(pretrained=True)
+    backbone = models.resnet101(pretrained=True)
 
-    return LandmarkPredictor(backbone=backbone, emb_dim=512,
-                             num_landmarks=num_landmarks, dropout_prob=dropout_prob, train_backbone=train_backbone)
+    return LandmarkPredictor(backbone=backbone, emb_dim=backbone.fc.in_features,
+                             num_landmarks=num_landmarks, dropout_prob=dropout_prob,
+                             train_backbone=train_backbone)
 
 
 def get_loss(w: float, eps: float, reduction: Optional[str]):

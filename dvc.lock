@@ -145,15 +145,14 @@ test-run:
     size: 0
     nfiles: 0
 prediction:
-  cmd: python ./make_prediction.py --checkpoint "C:\Users\alex9\Downloads\exp\train\checkpoint\epoch=19-Val
-    MSE loss=0.0967.ckpt" -c ./configs/prediction/prediction.yml
+  cmd: python ./make_prediction.py -c ./configs/prediction/prediction.yml
   deps:
   - path: ./configs/prediction/prediction.yml
-    md5: deae745bdefe3642909e7bd7458f24d6
-    size: 106
+    md5: 00954a7e7035e0ede22683a1fb493fdf
+    size: 201
   - path: ./make_prediction.py
-    md5: 714b85b76684898105442bd05b032ed7
-    size: 4620
+    md5: 8322523afc1d34319efeb72b080399fd
+    size: 4609
   params:
     params.py:
       TrainParams:
@@ -170,5 +169,18 @@ prediction:
         - 228
   outs:
   - path: ./resnet_subm.csv
-    md5: 07c7a035a446de54bcaf67021604c5e5
-    size: 23958
+    md5: 2ff00c727ab076ab040e3d2ba69a5380
+    size: 3920062
+fix_annot:
+  cmd: python ./fix_faces.py -c ./configs/fix_annotation/fix_annotation.yml
+  deps:
+  - path: ./configs/fix_annotation/fix_annotation.yml
+    md5: 8ce08c116d3ad9702cbf62a30ff56a27
+    size: 58
+  - path: ./data/test-train/contest01_data/train
+    md5: 0d2903f115f14c30a8f87c6360b0925f.dir
+    size: 2533747001
+    nfiles: 64003
+  - path: ./fix_faces.py
+    md5: 005d3ff6eddbbf73269da423c2b32ed3
+    size: 4918

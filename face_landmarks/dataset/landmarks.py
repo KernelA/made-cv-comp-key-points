@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 import pandas as pd
 
 
-from .utils import read_image, normalize_landmarks
+from .utils import read_image
 
 
 class LandMarkDatset(data.Dataset):
@@ -80,20 +80,15 @@ class LandMarkDatset(data.Dataset):
         else:
             image = read_image(os.path.join(self._image_dir, self._image_names[index]))
 
-            height, width = image.shape[-2:]
-
-            if self.transformations is not None:
-                image = self.transformations(image)
-
             data = {"image": image, "image_name": self._image_names[index]}
 
             if self._is_train:
-                data["norm_landmarks"] = normalize_landmarks(
-                    self._landmarks_points[index], width, height)
+                data["landmarks"] = self._landmarks_points[index]
             else:
                 data["point_indices"] = self._point_indices[index]
-                data["img_height"] = height
-                data["img_width"] = width
+
+            if self.transformations is not None:
+                image = self.transformations(image)
 
             return data
 

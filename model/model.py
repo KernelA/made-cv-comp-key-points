@@ -5,19 +5,18 @@ from torch.nn import functional as F
 
 class LandmarkPredictor(nn.Module):
 
-    def __init__(self, *, backbone, emb_dim: int, num_landmarks: int, dropout_prob: float = 0.5, train_backbone: bool = True):
+    def __init__(self, *, backbone, emb_dim: int, num_landmarks: int, dropout_prob: float = 0.5,
+                 train_backbone: bool = True):
         super().__init__()
 
         self.regressor = backbone
         self.regressor.requires_grad_(train_backbone)
 
-        linear_output = 1024
+        # linear_output = 1024
 
         self.regressor.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
-            nn.Linear(emb_dim, linear_output),
-            nn.Dropout(dropout_prob),
-            nn.Linear(linear_output, num_landmarks * 2)
+            nn.Linear(emb_dim, 2 * num_landmarks, bias=True)
         )
 
     def forward(self, x):

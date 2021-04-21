@@ -3,7 +3,7 @@ RANDOM_STATE = 64
 
 class OptimizerParams:
     def __init__(self) -> None:
-        self.lr = 1e-4
+        self.lr = 1e-2
         self.betas = (0.9, 0.999)
         self.eps = 1e-8
         self.weight_decay = 0

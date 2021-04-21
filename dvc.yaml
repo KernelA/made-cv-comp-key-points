@@ -55,8 +55,7 @@ stages:
     - ./exp/test_run:
         cache: false
   prediction:
-    cmd: python ./make_prediction.py --checkpoint "C:\Users\alex9\Downloads\exp\train\checkpoint\epoch=19-Val
-      MSE loss=0.0967.ckpt" -c ./configs/prediction/prediction.yml
+    cmd: python ./make_prediction.py -c ./configs/prediction/prediction.yml
     deps:
     - ./configs/prediction/prediction.yml
     - ./make_prediction.py
@@ -65,3 +64,9 @@ stages:
       - TrainParams
     outs:
     - ./resnet_subm.csv
+  fix_annot:
+    cmd: python ./fix_faces.py -c ./configs/fix_annotation/fix_annotation.yml
+    deps:
+    - ./configs/fix_annotation/fix_annotation.yml
+    - ./data/test-train/contest01_data/train
+    - ./fix_faces.py
