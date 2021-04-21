@@ -56,7 +56,7 @@ def make_prediction(model, data_loader, pred_file):
                 csv_writer.writerow([batch["image_name"][num_image]] +
                                     list(selected_points))
 
-    logging.getLogger().info("Save predcition to '%s'", args.pred_file)
+    logging.getLogger().info("Save predictions to '%s'", args.pred_file)
 
 
 @torch.no_grad()
@@ -68,7 +68,7 @@ def error_anal(model, data_loader):
         predicted_landmarks = model(batch).view(batch_size, -1)
 
         error = torch.mean(F.mse_loss(
-            predicted_landmarks, batch["norm_landmarks"].view(batch_size, -1), reduction="none"), dim=1)
+            predicted_landmarks, batch["landmarks"].view(batch_size, -1), reduction="none"), dim=1)
 
         for i, image_name in enumerate(batch["image_name"]):
             loss_values[image_name] = error[i].item()
