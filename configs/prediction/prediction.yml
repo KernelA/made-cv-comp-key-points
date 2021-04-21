@@ -1,4 +1,5 @@
 data_dir: ./data/test-train/contest01_data
 pred_file: ./resnet_subm.csv
-num_workers: 4
-batch_size: 32
+num_workers: 6
+batch_size: 16
+checkpoint: D:\Datasets\MADECV1\exp2\exp\train\checkpoint\epoch=49-Val MSE loss=190.5139.ckpt

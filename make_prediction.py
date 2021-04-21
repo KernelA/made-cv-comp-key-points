@@ -44,7 +44,7 @@ def make_prediction(model, data_loader, pred_file):
                 ), batch["img_width"][num_image].item()
                 landmark_pos = denormalize_landmarks(normalized_landmark_pos, width, height)
                 selected_points = torch.flatten(torch.index_select(
-                    landmark_pos, dim=0, index=indices).cpu().to(torch.long))
+                    landmark_pos, dim=0, index=indices).cpu().to(torch.long)).numpy()
                 csv_writer.writerow([batch["image_name"][num_image]] +
                                     list(selected_points))
 
