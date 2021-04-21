@@ -139,7 +139,7 @@ def fix_faces(image_dir):
 
     fixed_path = face_landmarks_path
     fixed_landmarks.to_csv(fixed_path.with_name(
-        "fixed_landmarks.csv"), index=True, encoding="utf-8")
+        "fixed_landmarks.csv"), index=True, sep="\t", encoding="utf-8")
 
     logger.info("Save new landmarks to '%s'", fixed_path)
 
