@@ -1,17 +1,21 @@
 import csv
+from face_landmarks.dataset import transforms
 import json
 import logging
 import os
 import shutil
+import pathlib
+import random
 
 import configargparse
 import torch
 from torch.nn import functional as F
 from torch.utils import data
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 from main_train import get_model
-from face_landmarks import LandMarkDatset, ModelTrain
+from face_landmarks import LandMarkDatset, ModelTrain, denormalize_tensor_to_image
 from cli_utils import is_dir, is_file
 from params import TrainParams
 from main_train import valid_transform
@@ -33,26 +37,54 @@ def restore_landmarks_batch(landmarks, fs, margins_x, margins_y):
 
 
 @torch.no_grad()
-def make_prediction(model, data_loader, pred_file):
+def make_prediction(model, data_loader, pred_file, debug_dir):
+
+    debug_dir_pathlib = None if debug_dir is None else pathlib.Path(debug_dir)
+
+    if debug_dir_pathlib is not None:
+        debug_dir_pathlib.mkdir(exist_ok=True, parents=True)
+
+    def save_debug_image(image, landmarks, image_name, debug_dir):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.imshow(image.permute(1, 2, 0))
+        ax.plot(landmarks[:, 0], landmarks[:, 1], "go")
+        fig.savefig(debug_dir / image_name)
+        plt.close(fig)
+
     with open(pred_file, "w", encoding="utf-8", newline="") as file:
         csv_writer = csv.writer(file)
 
         csv_writer.writerow(
             ["file_name"] + sum([[f"Point_M{i}_X", f"Point_M{i}_Y"] for i in range(30)], start=[]))
 
-        for batch in tqdm(data_loader, total=len(data_loader)):
+        debug_batch_indices = random.sample(tuple(range(len(data_loader))), k=20)
+
+        for batch_idx, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
             batch_size = batch["image"].shape[0]
             predicted_landmarks = model(batch).view(batch_size, -1, 2)
 
-            fs = batch["scale_coef"].numpy()  # B
-            margins_x = batch["crop_margin_x"].numpy()  # B
-            margins_y = batch["crop_margin_y"].numpy()  # B
-            prediction = restore_landmarks_batch(
-                predicted_landmarks, fs, margins_x, margins_y)  # B x NUM_PTS x 2
+            fs = batch["scale_coef"]  # B
+            margins_x = batch["crop_margin_x"]  # B
+            margins_y = batch["crop_margin_y"]  # B
 
-            for num_image, (landmark_pos, indices) in enumerate(zip(prediction, batch["point_indices"])):
+            restored_landmarks = restore_landmarks_batch(
+                torch.clone(predicted_landmarks), fs, margins_x, margins_y)  # B x NUM_PTS x 2
+
+            if batch_idx in debug_batch_indices:
+                try:
+                    selected_index = random.randint(0, batch_size - 1)
+                    image = denormalize_tensor_to_image(batch["image"][selected_index])
+                    save_debug_image(image, predicted_landmarks[selected_index],
+                                     batch["image_name"][selected_index], debug_dir_pathlib)
+                except Exception:
+                    logging.getLogger().exception("Unexpected error in debug save")
+
+            for num_image, (restored_landmark_pos, indices) in enumerate(zip(restored_landmarks,
+                                                                             batch["point_indices"])):
                 selected_points = torch.flatten(torch.index_select(
-                    landmark_pos, dim=0, index=indices).cpu().to(torch.long)).numpy()
+                    restored_landmark_pos, dim=0, index=indices).cpu().to(torch.long)).numpy()
+
                 csv_writer.writerow([batch["image_name"][num_image]] +
                                     list(selected_points))
 
@@ -111,7 +143,7 @@ def main(args):
             json.dump(error_by_image, file)
         logging.getLogger().info("Save errors to '%s'", args.pred_file)
     else:
-        make_prediction(model, test_loader, args.pred_file)
+        make_prediction(model, test_loader, args.pred_file, args.debug_dir)
 
 
 if __name__ == '__main__':
@@ -124,6 +156,8 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--error_anal", action="store_true")
     parser.add_argument("--precompute", action="store_true")
+    parser.add_argument("--debug_dir", default=None, type=str,
+                        help="A path to dir with predicted landmarks")
 
     args = parser.parse_args()
 

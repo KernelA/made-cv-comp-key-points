@@ -21,7 +21,7 @@ class SchedulerPrams:
 
 class TrainParams:
     def __init__(self) -> None:
-        self.train_size = 0.85
+        self.train_size = 1
         self.num_landmarks = 971
         self.dropout_prob = 0.2
         self.check_val_every_n_epoch = 5
@@ -35,6 +35,6 @@ class TrainParams:
 
 class LossParams:
     def __init__(self) -> None:
-        self.w = 0.2
+        self.w = 8
         self.eps = 2
         self.redcution = "sum"

@@ -139,3 +139,4 @@ cython_debug/
 
 .vscode/
 /resnet_subm.csv
+test_landmarks/
