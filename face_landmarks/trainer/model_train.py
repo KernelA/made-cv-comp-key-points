@@ -44,7 +44,8 @@ class ModelTrain(pl.LightningModule):
         normalized_landmarks = self._transform_landmarks(
             predicted_norm_positions.shape[0], batch["landmarks"])
 
-        loss = self._loss_func(predicted_norm_positions, normalized_landmarks)
+        # loss = self._loss_func(predicted_norm_positions, normalized_landmarks)
+
         mse_loss_value = torch.sum(F.mse_loss(predicted_norm_positions,
                                               normalized_landmarks, reduction="none"), dim=1)
 
@@ -61,10 +62,12 @@ class ModelTrain(pl.LightningModule):
 
                 self.logger.experiment.add_figure(tag, pred_figure, global_step=self.global_step)
 
-        self.log(self._loss_name, loss, on_step=True, on_epoch=True)
-        self.log("MSE loss", mse_loss_value.sum(), on_step=True, on_epoch=True)
+        batch_loss = mse_loss_value.mean()
 
-        return loss
+        self.log(self._loss_name, batch_loss, on_step=True, on_epoch=True)
+        self.log(self._target_metric, batch_loss, on_step=True, on_epoch=True)
+
+        return batch_loss
 
     def validation_step(self, batch, batch_idx):
         predicted_norm_positions = self(batch)

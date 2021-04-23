@@ -105,7 +105,7 @@ def fix_faces(image_dir, out_path):
 
     image_names = face_landmarks.index.tolist()
 
-    with Pool(os.cpu_count()) as workers:
+    with Pool(max(1, os.cpu_count() // 2)) as workers:
         stats = workers.starmap(compute_stat, zip(
             image_names,
             face_landmarks.to_numpy().reshape(len(image_names), -1, 2)
@@ -143,10 +143,9 @@ def fix_faces(image_dir, out_path):
                              out_path.with_name(f"{num_save}_savefix_landmarks_debug.jpg"))
             num_save += 1
 
-    fixed_path = face_landmarks_path
     fixed_landmarks.to_csv(out_path, index=True, sep="\t", encoding="utf-8")
 
-    logger.info("Save new landmarks to '%s'", fixed_path)
+    logger.info("Save new landmarks to '%s'", out_path)
 
 
 def main(args):

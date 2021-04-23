@@ -1,5 +1,5 @@
-train_batch_size: 64
-valid_batch_size: 64
+train_batch_size: 128
+valid_batch_size: 128
 valid_num_workers: 4
 train_num_workers: 4
 data_dir: ./data/test-train/contest01_data

@@ -4,6 +4,7 @@ import pathlib
 
 import configargparse
 import torch
+from torch import functional as F
 from torchvision import models
 import pytorch_lightning as pl
 from pytorch_lightning import callbacks
@@ -108,7 +109,7 @@ def main(args):
     opt_params = OptimizerParams()
     scheduler_params = SchedulerPrams()
 
-    target_metric_name = "Val MSE loss"
+    target_metric_name = "MSE loss"
 
     train_module = ModelTrain(model=model, loss_func=loss, optimizer_params=opt_params,
                               scheduler_params=scheduler_params,
@@ -118,9 +119,9 @@ def main(args):
     checkpoint_dir = exp_dir / "checkpoint"
     checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
-    checkpoint_callback = callbacks.ModelCheckpoint(monitor=target_metric_name,
+    checkpoint_callback = callbacks.ModelCheckpoint(monitor=target_metric_name + '_epoch',
                                                     dirpath=checkpoint_dir,
-                                                    filename="{epoch}-{Val MSE loss:.4f}",
+                                                    filename=f"{{epoch}}-{{{target_metric_name}:.4f}}",
                                                     verbose=True,
                                                     save_last=True,
                                                     save_top_k=2,
