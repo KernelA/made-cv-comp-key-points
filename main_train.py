@@ -119,7 +119,7 @@ def main(args):
     checkpoint_dir = exp_dir / "checkpoint"
     checkpoint_dir.mkdir(exist_ok=True, parents=True)
 
-    checkpoint_callback = callbacks.ModelCheckpoint(monitor=target_metric_name + '_epoch',
+    checkpoint_callback = callbacks.ModelCheckpoint(monitor=target_metric_name + '_step',
                                                     dirpath=checkpoint_dir,
                                                     filename=f"{{epoch}}-{{{target_metric_name}:.4f}}",
                                                     verbose=True,
