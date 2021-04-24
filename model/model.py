@@ -12,11 +12,11 @@ class LandmarkPredictor(nn.Module):
         self.regressor = backbone
         self.regressor.requires_grad_(train_backbone)
 
-        # linear_output = 1024
-
+        self.regressor.avgpool = nn.AdaptiveAvgPool2d((2, 2))
         self.regressor.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
-            nn.Linear(emb_dim, 2 * num_landmarks, bias=True)
+            nn.Dropout(dropout_prob),
+            nn.Linear(2 * 2 * emb_dim, 2 * num_landmarks, bias=True)
         )
 
     def forward(self, x):

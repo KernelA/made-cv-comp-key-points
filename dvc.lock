@@ -107,15 +107,15 @@ test-run:
     size: 2090142348
     nfiles: 64001
   - path: ./face_landmarks/
-    md5: 24f5882fd6edc1569acd42d8388f5126.dir
-    size: 44157
+    md5: b1fa0180ec507e327cd5cd829ac68b8e.dir
+    size: 44236
     nfiles: 22
   - path: ./main_train.py
-    md5: 45496ca680cb3d5266bcc243d469826a
-    size: 8436
+    md5: 9be3bc006837f2dc5ed6d40b1d036de2
+    size: 8403
   - path: ./model/
-    md5: a40c6ce92f714212a0638891a2794001.dir
-    size: 2250
+    md5: 4c37e4d2c4300ca25856be5ef03775a9.dir
+    size: 2352
     nfiles: 4
   params:
     params.py:
@@ -137,8 +137,8 @@ test-run:
         dropout_prob: 0.2
         check_val_every_n_epoch: 1
         flush_logs_every_n_steps: 100
-        precision: 16
-        max_epochs: 60
+        precision: 32
+        max_epochs: 50
         train_backbone: true
         img_size_in_batch:
         - 256

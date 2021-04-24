@@ -15,20 +15,20 @@ class SchedulerPrams:
         self.min_lr = 1e-7
         self.verbose = True
         self.mode = "min"
-        self.patience = 5
-        self.threshold = 1e-3
+        self.patience = 3
+        self.threshold = 1e-2
 
 
 class TrainParams:
     def __init__(self) -> None:
         self.train_size = 0.99
         self.num_landmarks = 971
-        self.dropout_prob = 0.2
+        self.dropout_prob = 0.25
         self.check_val_every_n_epoch = 1
         self.flush_logs_every_n_steps = 100
         # 16 or 32
-        self.precision = 16
-        self.max_epochs = 60
+        self.precision = 32
+        self.max_epochs = 50
         self.train_backbone = True
         self.img_size_in_batch = (256, 256)
 

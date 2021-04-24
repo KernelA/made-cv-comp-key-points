@@ -24,7 +24,6 @@ def train_transform(img_size: Tuple[int, int]):
         TransformByKeys(transforms.ConvertImageDtype(torch.get_default_dtype()), ("image",)),
         ScaleMinSideToSize(img_size),
         CropCenter(img_size[0]),
-        MyCoarseDropout(p=0.5),
         TransformByKeys(transforms.Normalize(mean=TORCHVISION_RGB_MEAN,
                                              std=TORCHVISION_RGB_STD), ("image",))
     ]
