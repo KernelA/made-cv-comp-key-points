@@ -97,33 +97,33 @@ test-run:
   deps:
   - path: ./configs/train/train.yml
     md5: 95440bf5fa9a521f2fe3d084791d8a1a
-    size: 266
+    size: 275
   - path: ./data/fixed_annot/fixed_landmarks.csv
     md5: 6eaf9dbe3c9722b2d3fec5820add1004
-    size: 443387719
+    size: 443451720
   - path: ./data/test-train/contest01_data/train
-    md5: 1213b5b70ef12b883ab4e3eb3bd97265.dir
-    size: 2090582527
-    nfiles: 64007
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
   - path: ./face_landmarks/
-    md5: 0a3dee95706e83a46700ce77387a850a.dir
-    size: 41760
+    md5: 9d25df7976a5fd668114aeb19db32c29.dir
+    size: 42469
     nfiles: 22
   - path: ./main_train.py
-    md5: b41efda8d65aa19dbe2d1c836f1a617c
-    size: 8182
+    md5: 00bf14ce50a89f107b58f584ee614d6b
+    size: 8416
   - path: ./model/
-    md5: a822df1cbadb6f678612325821937f16.dir
-    size: 2211
+    md5: a40c6ce92f714212a0638891a2794001.dir
+    size: 2250
     nfiles: 4
   params:
     params.py:
       LossParams:
-        w: 0.2
+        w: 8
         eps: 2
         redcution: sum
       OptimizerParams:
-        lr: 0.01
+        lr: 0.001
         betas:
         - 0.9
         - 0.999
@@ -131,10 +131,10 @@ test-run:
         weight_decay: 0
         amsgrad: true
       TrainParams:
-        train_size: 0.85
+        train_size: 0.99
         num_landmarks: 971
         dropout_prob: 0.2
-        check_val_every_n_epoch: 5
+        check_val_every_n_epoch: 1
         flush_logs_every_n_steps: 100
         precision: 16
         max_epochs: 50
@@ -179,15 +179,15 @@ fix_annot:
   deps:
   - path: ./configs/fix_annotation/fix_annotation.yml
     md5: 1b0531cbc27fdf72c5793ba9edd9eed7
-    size: 106
+    size: 108
   - path: ./data/test-train/contest01_data/train
-    md5: 1213b5b70ef12b883ab4e3eb3bd97265.dir
-    size: 2090582527
-    nfiles: 64007
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
   - path: ./fix_faces.py
-    md5: bfe730e9469b2a88627e48f7b4e76a02
-    size: 5043
+    md5: 7b96cd9215966f05d088c4b215547cb0
+    size: 5220
   outs:
   - path: ./data/fixed_annot/fixed_landmarks.csv
     md5: 6eaf9dbe3c9722b2d3fec5820add1004
-    size: 443387719
+    size: 443451720
