@@ -22,10 +22,10 @@ class MyCoarseDropout(object):
                                                      min_holes=2, min_height=10, min_width=10,
                                                      fill_value=np.random.random(),
                                                      p=self.p)],
-                                 )(image=sample[self.elem_name].permute(1, 2, 0),)
+                                 )(image=sample[self.elem_name].permute(1, 2, 0).numpy(),)
 
         # Input is C x H x W, where C - is channel
-        sample[self.elem_name] = augmented['image'].permute(0, 1, 2)
+        sample[self.elem_name] = torch.from_numpy(augmented['image']).permute(2, 0, 1)
         return sample
 
 
