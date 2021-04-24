@@ -22,10 +22,10 @@ class MyCoarseDropout(object):
                                                      min_holes=2, min_height=10, min_width=10,
                                                      fill_value=np.random.random(),
                                                      p=self.p)],
-                                 )(image=sample[self.elem_name],)
+                                 )(image=sample[self.elem_name].permute(1, 2, 0),)
 
         # Input is C x H x W, where C - is channel
-        sample[self.elem_name] = augmented['image'].permute(1, 2, 0).permute(0, 1, 2)
+        sample[self.elem_name] = augmented['image'].permute(0, 1, 2)
         return sample
 
 
