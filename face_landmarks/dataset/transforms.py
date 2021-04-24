@@ -1,6 +1,8 @@
 from typing import Tuple
 
 import torch
+import numpy as np
+import albumentations as albu
 from torchvision.transforms import functional as F
 
 from ..costants import TORCHVISION_RGB_MEAN, TORCHVISION_RGB_STD
@@ -8,6 +10,23 @@ from ..costants import TORCHVISION_RGB_MEAN, TORCHVISION_RGB_STD
 
 def denormalize_tensor_to_image(tensor_image):
     return tensor_image * TORCHVISION_RGB_STD[:, None, None] + TORCHVISION_RGB_MEAN[:, None, None]
+
+
+class MyCoarseDropout(object):
+    def __init__(self, p=0.5, elem_name='image'):
+        self.p = p
+        self.elem_name = elem_name
+
+    def __call__(self, sample):
+        augmented = albu.Compose([albu.CoarseDropout(max_holes=4, max_height=20, max_width=20,
+                                                     min_holes=2, min_height=10, min_width=10,
+                                                     fill_value=np.random.random(),
+                                                     p=self.p)],
+                                 )(image=sample[self.elem_name],)
+
+        # Input is C x H x W, where C - is channel
+        sample[self.elem_name] = augmented['image'].permute(1, 2, 0).permute(0, 1, 2)
+        return sample
 
 
 class ScaleMinSideToSize:

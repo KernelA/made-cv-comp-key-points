@@ -28,7 +28,7 @@ class TrainParams:
         self.flush_logs_every_n_steps = 100
         # 16 or 32
         self.precision = 16
-        self.max_epochs = 50
+        self.max_epochs = 60
         self.train_backbone = True
         self.img_size_in_batch = (256, 256)
 

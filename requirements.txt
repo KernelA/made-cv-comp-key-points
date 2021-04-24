@@ -11,6 +11,7 @@ umap-learn~=0.5
 plotly==4.14.3
 requests~=2.25
 gdown~=3.12
+albumentations~=0.5.2
 -f https://download.pytorch.org/whl/torch_stable.html
 torchvision==0.9.1+cu102
 torch==1.8.1+cu102

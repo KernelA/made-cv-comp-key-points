@@ -25,12 +25,12 @@ stages:
   train:
     cmd: python ./main_train.py -c ./configs/train/train.yml
     deps:
-    - ./configs/train/train.yml
-    - ./face_landmarks/
-    - ./main_train.py
-    - ./model/
-    - ./data/test-train/contest01_data/train
-    - ./data/fixed_annot/fixed_landmarks.csv
+      - ./configs/train/train.yml
+      - ./face_landmarks/
+      - ./main_train.py
+      - ./model/
+      - ./data/test-train/contest01_data/train
+      - ./data/fixed_annot/fixed_landmarks.csv
     params:
       - params.py:
           - LossParams
@@ -41,14 +41,14 @@ stages:
   test-run:
     cmd:
       python ./main_train.py -c ./configs/train/train.yml --fast_dev_run --exp_dir
-      ./exp/test_run --valid_batch_size 16 --train_batch_size 16
+      ./exp/test_run --valid_num_workers 2 --train_num_workers 2 --valid_batch_size 16 --train_batch_size 16
     deps:
-    - ./configs/train/train.yml
-    - ./data/test-train/contest01_data/train
-    - ./data/fixed_annot/fixed_landmarks.csv
-    - ./face_landmarks/
-    - ./main_train.py
-    - ./model/
+      - ./configs/train/train.yml
+      - ./data/test-train/contest01_data/train
+      - ./data/fixed_annot/fixed_landmarks.csv
+      - ./face_landmarks/
+      - ./main_train.py
+      - ./model/
     params:
       - params.py:
           - LossParams
@@ -70,8 +70,8 @@ stages:
   fix_annot:
     cmd: python ./fix_faces.py -c ./configs/fix_annotation/fix_annotation.yml
     deps:
-    - ./configs/fix_annotation/fix_annotation.yml
-    - ./data/test-train/contest01_data/train
-    - ./fix_faces.py
+      - ./configs/fix_annotation/fix_annotation.yml
+      - ./data/test-train/contest01_data/train
+      - ./fix_faces.py
     outs:
-    - ./data/fixed_annot/fixed_landmarks.csv
+      - ./data/fixed_annot/fixed_landmarks.csv

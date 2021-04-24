@@ -93,7 +93,8 @@ train:
     nfiles: 0
 test-run:
   cmd: python ./main_train.py -c ./configs/train/train.yml --fast_dev_run --exp_dir
-    ./exp/test_run --valid_batch_size 16 --train_batch_size 16
+    ./exp/test_run --valid_num_workers 2 --train_num_workers 2 --valid_batch_size
+    16 --train_batch_size 16
   deps:
   - path: ./configs/train/train.yml
     md5: 95440bf5fa9a521f2fe3d084791d8a1a
@@ -106,12 +107,12 @@ test-run:
     size: 2090142348
     nfiles: 64001
   - path: ./face_landmarks/
-    md5: 9d25df7976a5fd668114aeb19db32c29.dir
-    size: 42469
+    md5: 24f5882fd6edc1569acd42d8388f5126.dir
+    size: 44157
     nfiles: 22
   - path: ./main_train.py
-    md5: 00bf14ce50a89f107b58f584ee614d6b
-    size: 8416
+    md5: 45496ca680cb3d5266bcc243d469826a
+    size: 8436
   - path: ./model/
     md5: a40c6ce92f714212a0638891a2794001.dir
     size: 2250
@@ -137,7 +138,7 @@ test-run:
         check_val_every_n_epoch: 1
         flush_logs_every_n_steps: 100
         precision: 16
-        max_epochs: 50
+        max_epochs: 60
         train_backbone: true
         img_size_in_batch:
         - 256
