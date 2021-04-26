@@ -92,7 +92,7 @@ class ModelTrain(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
             self.parameters(), **self._opt_params.__dict__)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        scheduler = torch.optim.lr_scheduler.CyclicLR(
             optimizer, **self._scheduler_params.__dict__)
 
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": self._loss_name}
+        return {"optimizer": optimizer, "lr_scheduler": scheduler}

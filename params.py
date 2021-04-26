@@ -12,11 +12,11 @@ class OptimizerParams:
 
 class SchedulerPrams:
     def __init__(self) -> None:
-        self.min_lr = 1e-7
-        self.verbose = True
-        self.mode = "min"
-        self.patience = 3
-        self.threshold = 1e-2
+        self.base_lr = 1e-4
+        self.max_lr = 1e-2
+        self.step_size_up = 250
+        self.mode = "triangular2"
+        self.cycle_momentum = False
 
 
 class TrainParams:
