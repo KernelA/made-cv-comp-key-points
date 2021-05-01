@@ -16,7 +16,7 @@ from face_landmarks import ModelTrain, TrainTestLandmarkDataModule, TORCHVISION_
     TORCHVISION_RGB_STD, FullLandmarkDataModule, WingLoss, ScaleMinSideToSize, CropCenter, \
     TransformByKeys, MyCoarseDropout
 from model import LandmarkPredictor
-from params import LossParams, SchedulerPrams, TrainParams, RANDOM_STATE, OptimizerParams
+from params import SchedulerPrams, TrainParams, RANDOM_STATE, OptimizerParams
 
 
 def train_transform(img_size: Tuple[int, int]):
@@ -42,7 +42,7 @@ def valid_transform(img_size: Tuple[int, int]):
 
 
 def get_model(num_landmarks: int, dropout_prob: float, train_backbone: bool):
-    backbone = models.resnet50(pretrained=True)
+    backbone = models.resnet34(pretrained=True)
 
     return LandmarkPredictor(backbone=backbone, emb_dim=backbone.fc.in_features,
                              num_landmarks=num_landmarks, dropout_prob=dropout_prob,
@@ -102,19 +102,16 @@ def main(args):
     model = get_model(train_params.num_landmarks, train_params.dropout_prob,
                       train_params.train_backbone)
 
-    loss_params = LossParams()
-
-    loss = get_loss(loss_params.w, loss_params.eps, loss_params.redcution)
-
     opt_params = OptimizerParams()
     scheduler_params = SchedulerPrams()
 
     target_metric_name = "MSE loss"
 
-    train_module = ModelTrain(model=model, loss_func=loss, optimizer_params=opt_params,
+    train_module = ModelTrain(model=model, optimizer_params=opt_params,
                               scheduler_params=scheduler_params,
+                              train_backbone_after_epoch=train_params.train_full_model_after_epoch,
                               target_metric_name=target_metric_name,
-                              save_img_every_train_batch=25)
+                              save_img_every_train_batch=100)
 
     checkpoint_dir = exp_dir / "checkpoint"
     checkpoint_dir.mkdir(exist_ok=True, parents=True)
@@ -127,6 +124,8 @@ def main(args):
                                                     save_top_k=2,
                                                     mode="min",
                                                     save_weights_only=False)
+
+    lr_monitor = callbacks.LearningRateMonitor(logging_interval='step')
 
     log_dir = exp_dir / "logs"
     log_dir.mkdir(exist_ok=True, parents=True)
@@ -152,7 +151,7 @@ def main(args):
                          progress_bar_refresh_rate=10,
                          precision=train_params.precision,
                          max_epochs=train_params.max_epochs,
-                         callbacks=[checkpoint_callback]
+                         callbacks=[checkpoint_callback, lr_monitor]
                          )
 
     trainer.fit(train_module, datamodule=datamodule)

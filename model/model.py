@@ -10,14 +10,24 @@ class LandmarkPredictor(nn.Module):
         super().__init__()
 
         self.regressor = backbone
-        self.regressor.requires_grad_(train_backbone)
-
         self.regressor.avgpool = nn.AdaptiveAvgPool2d((2, 2))
         self.regressor.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
             nn.Dropout(dropout_prob),
             nn.Linear(2 * 2 * emb_dim, 2 * num_landmarks, bias=True)
         )
+
+    def freeze_backbone(self):
+        self.regressor.requires_grad_(False)
+        self.regressor.eval()
+        self.regressor.avgpool.requires_grad_(True)
+        self.regressor.fc.requires_grad_(True)
+        self.regressor.avgpool.train()
+        self.regressor.fc.train()
+
+    def unfreeze_backbone(self):
+        self.regressor.requires_grad_(True)
+        self.regressor.train()
 
     def forward(self, x):
         """Return predcited positions: batch_size x num_landmarks * 2

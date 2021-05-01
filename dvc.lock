@@ -107,15 +107,15 @@ test-run:
     size: 2090142348
     nfiles: 64001
   - path: ./face_landmarks/
-    md5: b1fa0180ec507e327cd5cd829ac68b8e.dir
-    size: 44236
+    md5: cfd936ad0456eafbd1091cd808c70cce.dir
+    size: 44723
     nfiles: 22
   - path: ./main_train.py
-    md5: 9be3bc006837f2dc5ed6d40b1d036de2
-    size: 8403
+    md5: 358a4dff66d841ca17249a00c14720a0
+    size: 8452
   - path: ./model/
-    md5: 4c37e4d2c4300ca25856be5ef03775a9.dir
-    size: 2352
+    md5: 37eb395ca896aa5cb071b98dc6aafd35.dir
+    size: 3173
     nfiles: 4
   params:
     params.py:
@@ -124,7 +124,7 @@ test-run:
         eps: 2
         redcution: sum
       OptimizerParams:
-        lr: 0.001
+        lr: 0.1
         betas:
         - 0.9
         - 0.999
@@ -134,15 +134,16 @@ test-run:
       TrainParams:
         train_size: 0.99
         num_landmarks: 971
-        dropout_prob: 0.2
+        dropout_prob: 0.1
         check_val_every_n_epoch: 1
         flush_logs_every_n_steps: 100
-        precision: 32
+        precision: 16
         max_epochs: 50
         train_backbone: true
         img_size_in_batch:
         - 256
         - 256
+        train_full_model_after_epoch: 8
   outs:
   - path: ./exp/test_run
     md5: d751713988987e9331980363e24189ce.dir
@@ -186,8 +187,8 @@ fix_annot:
     size: 2090142348
     nfiles: 64001
   - path: ./fix_faces.py
-    md5: 7b96cd9215966f05d088c4b215547cb0
-    size: 5220
+    md5: d2d3c179af40a0ab3b0091750d1d076d
+    size: 5182
   outs:
   - path: ./data/fixed_annot/fixed_landmarks.csv
     md5: 6eaf9dbe3c9722b2d3fec5820add1004
