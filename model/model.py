@@ -13,8 +13,7 @@ class LandmarkPredictor(nn.Module):
         self.regressor.avgpool = nn.AdaptiveAvgPool2d((2, 2))
         self.regressor.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
-            nn.Dropout(dropout_prob),
-            nn.Linear(2 * 2 * emb_dim, 2 * num_landmarks, bias=True)
+            nn.Linear(2 * 2 * emb_dim, 2 * num_landmarks, bias=False)
         )
 
     def freeze_backbone(self):

@@ -42,7 +42,7 @@ def valid_transform(img_size: Tuple[int, int]):
 
 
 def get_model(num_landmarks: int, dropout_prob: float, train_backbone: bool):
-    backbone = models.resnet34(pretrained=True)
+    backbone = models.resnet18(pretrained=True)
 
     return LandmarkPredictor(backbone=backbone, emb_dim=backbone.fc.in_features,
                              num_landmarks=num_landmarks, dropout_prob=dropout_prob,

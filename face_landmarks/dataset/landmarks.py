@@ -79,9 +79,11 @@ class LandMarkDatset(data.Dataset):
             dump_path = os.path.join(self._dump_dir, self._image_names[index])
             return torch.load(self._get_dump_path(dump_path))
         else:
+            image_path = os.path.join(self._image_dir, self._image_names[index])
             image = read_image(os.path.join(self._image_dir, self._image_names[index]))
 
-            data = {"image": image, "image_name": self._image_names[index]}
+            data = {"image": image,
+                    "image_name": self._image_names[index], "image_path": image_path}
 
             if self._is_train:
                 data["landmarks"] = self._landmarks_points[index]

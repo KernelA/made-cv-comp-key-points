@@ -3,7 +3,7 @@ RANDOM_STATE = 32
 
 class OptimizerParams:
     def __init__(self) -> None:
-        self.lr = 1e-1
+        self.lr = 1e-2
         self.betas = (0.9, 0.999)
         self.eps = 1e-8
         self.weight_decay = 0
@@ -12,7 +12,7 @@ class OptimizerParams:
 
 class SchedulerPrams:
     def __init__(self) -> None:
-        self.T_max = 1000
+        self.T_max = 5
         self.eta_min = 1e-4
 
 

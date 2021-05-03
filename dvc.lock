@@ -46,31 +46,34 @@ train:
   cmd: python ./main_train.py -c ./configs/train/train.yml
   deps:
   - path: ./configs/train/train.yml
-    md5: 3438ffbccc2fac330dcd7e55a12fecaa
-    size: 174
+    md5: 95440bf5fa9a521f2fe3d084791d8a1a
+    size: 275
+  - path: ./data/fixed_annot/fixed_landmarks.csv
+    md5: 6eaf9dbe3c9722b2d3fec5820add1004
+    size: 443451720
   - path: ./data/test-train/contest01_data/train
     md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
     size: 2090142348
     nfiles: 64001
   - path: ./face_landmarks/
-    md5: cfbd74d08817447c56bcffae40d2caf3.dir
-    size: 33153
+    md5: f64cbcc21ee3d3e2c244b687dc23bca8.dir
+    size: 44967
     nfiles: 22
   - path: ./main_train.py
-    md5: eac7d3f67a9ea436a782b6c08050f89f
-    size: 6344
+    md5: 3be88098091f2ef8b730fd723ab526b4
+    size: 8452
   - path: ./model/
-    md5: 3ebd9fc197e1182d53060fc88563f2fe.dir
-    size: 2348
+    md5: a4a8974b0587c5c6cf630919a2ada0c2.dir
+    size: 3116
     nfiles: 4
   params:
     params.py:
       LossParams:
-        w: 0.2
+        w: 8
         eps: 2
         redcution: sum
       OptimizerParams:
-        lr: 0.0001
+        lr: 0.01
         betas:
         - 0.9
         - 0.999
@@ -78,19 +81,23 @@ train:
         weight_decay: 0
         amsgrad: true
       TrainParams:
-        train_size: 0.8
+        train_size: 0.99
         num_landmarks: 971
-        dropout_prob: 0.25
-        check_val_every_n_epoch: 2
-        flush_logs_every_n_steps: 10
+        dropout_prob: 0.1
+        check_val_every_n_epoch: 1
+        flush_logs_every_n_steps: 100
         precision: 16
         max_epochs: 50
         train_backbone: true
+        img_size_in_batch:
+        - 256
+        - 256
+        train_full_model_after_epoch: 8
   outs:
   - path: ./exp/train
-    md5: d751713988987e9331980363e24189ce.dir
-    size: 0
-    nfiles: 0
+    md5: 26696146778bd562ff5020c7f2e96a1f.dir
+    size: 219333855
+    nfiles: 4
 test-run:
   cmd: python ./main_train.py -c ./configs/train/train.yml --fast_dev_run --exp_dir
     ./exp/test_run --valid_num_workers 2 --train_num_workers 2 --valid_batch_size

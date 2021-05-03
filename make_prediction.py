@@ -15,7 +15,7 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 
 from main_train import get_model
-from face_landmarks import LandMarkDatset, ModelTrain, denormalize_tensor_to_image
+from face_landmarks import LandMarkDatset, ModelTrain, denormalize_tensor_to_image, read_image
 from cli_utils import is_dir, is_file
 from params import TrainParams
 from main_train import valid_transform
@@ -42,21 +42,23 @@ def make_prediction(model, data_loader, pred_file, debug_dir):
     debug_dir_pathlib = None if debug_dir is None else pathlib.Path(debug_dir)
 
     if debug_dir_pathlib is not None:
-        debug_dir_pathlib.mkdir(exist_ok=True, parents=True)
+        if debug_dir_pathlib.exists():
+            shutil.rmtree(debug_dir_pathlib)
+        debug_dir_pathlib.mkdir(parents=True)
 
     def save_debug_image(image, landmarks, image_name, debug_dir):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.imshow(image.permute(1, 2, 0))
         ax.plot(landmarks[:, 0], landmarks[:, 1], "go")
-        fig.savefig(debug_dir / image_name)
+        fig.savefig(debug_dir / image_name, bbox_inches="tight")
         plt.close(fig)
 
     with open(pred_file, "w", encoding="utf-8", newline="") as file:
         csv_writer = csv.writer(file)
 
         csv_writer.writerow(
-            ["file_name"] + sum([[f"Point_M{i}_X", f"Point_M{i}_Y"] for i in range(30)], start=[]))
+            ["file_name"] + sum([[f"Point_M{i}_X", f"Point_M{i}_Y"] for i in range(30)], []))
 
         debug_batch_indices = random.sample(tuple(range(len(data_loader))), k=20)
 
@@ -68,14 +70,14 @@ def make_prediction(model, data_loader, pred_file, debug_dir):
             margins_x = batch["crop_margin_x"]  # B
             margins_y = batch["crop_margin_y"]  # B
 
-            restored_landmarks = restore_landmarks_batch(
-                torch.clone(predicted_landmarks), fs, margins_x, margins_y)  # B x NUM_PTS x 2
+            restored_landmarks = torch.round(restore_landmarks_batch(
+                torch.clone(predicted_landmarks), fs, margins_x, margins_y)).cpu().to(torch.long)  # B x NUM_PTS x 2
 
             if batch_idx in debug_batch_indices:
                 try:
                     selected_index = random.randint(0, batch_size - 1)
-                    image = denormalize_tensor_to_image(batch["image"][selected_index])
-                    save_debug_image(image, predicted_landmarks[selected_index],
+                    image = read_image(batch["image_path"][selected_index])
+                    save_debug_image(image, restored_landmarks[selected_index],
                                      batch["image_name"][selected_index], debug_dir_pathlib)
                 except Exception:
                     logging.getLogger().exception("Unexpected error in debug save")
@@ -83,7 +85,7 @@ def make_prediction(model, data_loader, pred_file, debug_dir):
             for num_image, (restored_landmark_pos, indices) in enumerate(zip(restored_landmarks,
                                                                              batch["point_indices"])):
                 selected_points = torch.flatten(torch.index_select(
-                    restored_landmark_pos, dim=0, index=indices).cpu().to(torch.long)).numpy()
+                    restored_landmark_pos, dim=0, index=indices)).numpy()
 
                 csv_writer.writerow([batch["image_name"][num_image]] +
                                     list(selected_points))
@@ -134,6 +136,7 @@ def main(args):
     model = ModelTrain.load_from_checkpoint(
         args.checkpoint, map_location=location,
         model=model, loss_func=None,
+        train_backbone_after_epoch=None,
         optimizer_params=None, scheduler_params=None, target_metric_name=None)
     model.freeze()
 
