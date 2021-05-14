@@ -1,0 +1,77 @@
+stages:
+  unzip:
+    cmd: python ./unzip.py -c ./configs/prepare/unzip.yml
+    deps:
+      - ./configs/prepare/unzip.yml
+      - ./unzip.py
+      - ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    outs:
+      - ./data/test-train/contest01_data
+  extract_train_emb:
+    cmd: python ./compute_embeddings.py -c ./configs/extract_features/ext_features.yml
+    deps:
+      - ./compute_embeddings.py
+      - ./configs/extract_features/ext_features.yml
+      - ./data/test-train/contest01_data/train
+      - ./face_landmarks
+    outs:
+      - ./data/features/train_emb.pickle
+  download_data:
+    cmd: gdown --id 19905pDRrnX5YMdw-mvDZadJdUuzh_w2e -O ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    outs:
+      - ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip:
+          persist: true
+          cache: false
+  train:
+    cmd: python ./main_train.py -c ./configs/train/train.yml
+    deps:
+      - ./configs/train/train.yml
+      - ./face_landmarks/
+      - ./main_train.py
+      - ./model/
+      - ./data/test-train/contest01_data/train
+      - ./data/fixed_annot/fixed_landmarks.csv
+    params:
+      - params.py:
+          - LossParams
+          - OptimizerParams
+          - TrainParams
+    outs:
+      - ./exp/train
+  test-run:
+    cmd:
+      python ./main_train.py -c ./configs/train/train.yml --fast_dev_run --exp_dir
+      ./exp/test_run --valid_num_workers 2 --train_num_workers 2 --valid_batch_size 16 --train_batch_size 16
+    deps:
+      - ./configs/train/train.yml
+      - ./data/test-train/contest01_data/train
+      - ./data/fixed_annot/fixed_landmarks.csv
+      - ./face_landmarks/
+      - ./main_train.py
+      - ./model/
+    params:
+      - params.py:
+          - LossParams
+          - OptimizerParams
+          - TrainParams
+    outs:
+      - ./exp/test_run:
+          cache: false
+  prediction:
+    cmd: python ./make_prediction.py -c ./configs/prediction/prediction.yml
+    deps:
+      - ./configs/prediction/prediction.yml
+      - ./make_prediction.py
+    params:
+      - params.py:
+          - TrainParams
+    outs:
+      - ./resnet_subm.csv
+  fix_annot:
+    cmd: python ./fix_faces.py -c ./configs/fix_annotation/fix_annotation.yml
+    deps:
+      - ./configs/fix_annotation/fix_annotation.yml
+      - ./data/test-train/contest01_data/train
+      - ./fix_faces.py
+    outs:
+      - ./data/fixed_annot/fixed_landmarks.csv

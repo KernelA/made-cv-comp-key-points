@@ -1,0 +1,2 @@
+zip: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+out_dir: ./data/test-train

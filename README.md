@@ -1,12 +1,3 @@
-# comp1-key-points
+# Решение соревнования на Kaggle
 
-## Description
-
-
-## Requirements
-
-1. Python 3.8 or higher.
-
-## How to run
-
-
+[Описание соревнования](https://www.kaggle.com/c/made-cv-2021-contest-01-facial-landmarks/overview)

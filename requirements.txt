@@ -1,0 +1,17 @@
+kaggle~=1.5
+dvc~=1.11
+pytorch-lightning~=1.2
+ConfigArgParse~=1.4
+tqdm~=4.60
+tzlocal~=2.1
+pandas~=1.2
+matplotlib~=3.4
+ipywidgets~=7.6
+umap-learn~=0.5
+plotly==4.14.3
+requests~=2.25
+gdown~=3.12
+albumentations~=0.5.2
+-f https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.9.1+cu102
+torch==1.8.1+cu102

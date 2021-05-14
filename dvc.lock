@@ -1,0 +1,202 @@
+unzip:
+  cmd: python ./unzip.py -c ./configs/prepare/unzip.yml
+  deps:
+  - path: ./configs/prepare/unzip.yml
+    md5: ff03768450dac832b7dc882386ed2090
+    size: 93
+  - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    md5: f7d2134eb7b54aef3b56ae4cfc683ab7
+    size: 2186362366
+  - path: ./unzip.py
+    md5: 6ee7df2f6decc987eb7a982248eb90d7
+    size: 1844
+  outs:
+  - path: ./data/test-train/contest01_data
+    md5: caec7946fd41a447a13aaf84f6486866.dir
+    size: 2512026582
+    nfiles: 80003
+extract_train_emb:
+  cmd: python ./compute_embeddings.py -c ./configs/extract_features/ext_features.yml
+  deps:
+  - path: ./compute_embeddings.py
+    md5: 857e678215456c93188ada9be223a469
+    size: 2612
+  - path: ./configs/extract_features/ext_features.yml
+    md5: e3a55327cccce292086c253b7d595495
+    size: 87
+  - path: ./data/test-train/contest01_data/train
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
+  - path: ./face_landmarks
+    md5: 33dc63720237dabfc91477737c41940c.dir
+    size: 13766
+    nfiles: 16
+  outs:
+  - path: ./data/features/train_emb.pickle
+    md5: 5e14bb7ff2a970f44131e8ea71821ee5
+    size: 262144163
+download_data:
+  cmd: gdown --id 19905pDRrnX5YMdw-mvDZadJdUuzh_w2e -O ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+  outs:
+  - path: ./data/raw-data/made-cv-2021-contest-01-facial-landmarks.zip
+    md5: f7d2134eb7b54aef3b56ae4cfc683ab7
+    size: 2186362366
+train:
+  cmd: python ./main_train.py -c ./configs/train/train.yml
+  deps:
+  - path: ./configs/train/train.yml
+    md5: 95440bf5fa9a521f2fe3d084791d8a1a
+    size: 275
+  - path: ./data/fixed_annot/fixed_landmarks.csv
+    md5: 6eaf9dbe3c9722b2d3fec5820add1004
+    size: 443451720
+  - path: ./data/test-train/contest01_data/train
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
+  - path: ./face_landmarks/
+    md5: f64cbcc21ee3d3e2c244b687dc23bca8.dir
+    size: 44967
+    nfiles: 22
+  - path: ./main_train.py
+    md5: 3be88098091f2ef8b730fd723ab526b4
+    size: 8452
+  - path: ./model/
+    md5: a4a8974b0587c5c6cf630919a2ada0c2.dir
+    size: 3116
+    nfiles: 4
+  params:
+    params.py:
+      LossParams:
+        w: 8
+        eps: 2
+        redcution: sum
+      OptimizerParams:
+        lr: 0.01
+        betas:
+        - 0.9
+        - 0.999
+        eps: 1e-08
+        weight_decay: 0
+        amsgrad: true
+      TrainParams:
+        train_size: 0.99
+        num_landmarks: 971
+        dropout_prob: 0.1
+        check_val_every_n_epoch: 1
+        flush_logs_every_n_steps: 100
+        precision: 16
+        max_epochs: 50
+        train_backbone: true
+        img_size_in_batch:
+        - 256
+        - 256
+        train_full_model_after_epoch: 8
+  outs:
+  - path: ./exp/train
+    md5: 26696146778bd562ff5020c7f2e96a1f.dir
+    size: 219333855
+    nfiles: 4
+test-run:
+  cmd: python ./main_train.py -c ./configs/train/train.yml --fast_dev_run --exp_dir
+    ./exp/test_run --valid_num_workers 2 --train_num_workers 2 --valid_batch_size
+    16 --train_batch_size 16
+  deps:
+  - path: ./configs/train/train.yml
+    md5: 95440bf5fa9a521f2fe3d084791d8a1a
+    size: 275
+  - path: ./data/fixed_annot/fixed_landmarks.csv
+    md5: 6eaf9dbe3c9722b2d3fec5820add1004
+    size: 443451720
+  - path: ./data/test-train/contest01_data/train
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
+  - path: ./face_landmarks/
+    md5: cfd936ad0456eafbd1091cd808c70cce.dir
+    size: 44723
+    nfiles: 22
+  - path: ./main_train.py
+    md5: 358a4dff66d841ca17249a00c14720a0
+    size: 8452
+  - path: ./model/
+    md5: 37eb395ca896aa5cb071b98dc6aafd35.dir
+    size: 3173
+    nfiles: 4
+  params:
+    params.py:
+      LossParams:
+        w: 8
+        eps: 2
+        redcution: sum
+      OptimizerParams:
+        lr: 0.1
+        betas:
+        - 0.9
+        - 0.999
+        eps: 1e-08
+        weight_decay: 0
+        amsgrad: true
+      TrainParams:
+        train_size: 0.99
+        num_landmarks: 971
+        dropout_prob: 0.1
+        check_val_every_n_epoch: 1
+        flush_logs_every_n_steps: 100
+        precision: 16
+        max_epochs: 50
+        train_backbone: true
+        img_size_in_batch:
+        - 256
+        - 256
+        train_full_model_after_epoch: 8
+  outs:
+  - path: ./exp/test_run
+    md5: d751713988987e9331980363e24189ce.dir
+    size: 0
+    nfiles: 0
+prediction:
+  cmd: python ./make_prediction.py -c ./configs/prediction/prediction.yml
+  deps:
+  - path: ./configs/prediction/prediction.yml
+    md5: 00954a7e7035e0ede22683a1fb493fdf
+    size: 201
+  - path: ./make_prediction.py
+    md5: 8322523afc1d34319efeb72b080399fd
+    size: 4609
+  params:
+    params.py:
+      TrainParams:
+        train_size: 0.85
+        num_landmarks: 971
+        dropout_prob: 0.2
+        check_val_every_n_epoch: 5
+        flush_logs_every_n_steps: 100
+        precision: 16
+        max_epochs: 50
+        train_backbone: true
+        img_size_in_batch:
+        - 176
+        - 228
+  outs:
+  - path: ./resnet_subm.csv
+    md5: 2ff00c727ab076ab040e3d2ba69a5380
+    size: 3920062
+fix_annot:
+  cmd: python ./fix_faces.py -c ./configs/fix_annotation/fix_annotation.yml
+  deps:
+  - path: ./configs/fix_annotation/fix_annotation.yml
+    md5: 1b0531cbc27fdf72c5793ba9edd9eed7
+    size: 108
+  - path: ./data/test-train/contest01_data/train
+    md5: 9ea72cf7aba685917ebb94c550aaccfe.dir
+    size: 2090142348
+    nfiles: 64001
+  - path: ./fix_faces.py
+    md5: d2d3c179af40a0ab3b0091750d1d076d
+    size: 5182
+  outs:
+  - path: ./data/fixed_annot/fixed_landmarks.csv
+    md5: 6eaf9dbe3c9722b2d3fec5820add1004
+    size: 443451720
